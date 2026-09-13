@@ -61,7 +61,7 @@ flowchart LR
 | Messaging | [Photon](https://photon.codes) iMessage channel |
 | Deploy | Vercel + AI Gateway |
 | Integrations | Composio (Ignav, Blue Pillow, Notion, Google Calendar, Google Maps) |
-| Memory | Upstash Redis via `@upstash/agentkit-eve` |
+| Memory | Upstash Redis documents via `@upstash/agentkit-eve` |
 | Model | `alibaba/qwen3.7-flash` (Vercel AI Gateway) |
 
 ---
@@ -121,15 +121,47 @@ Other commands:
 
 ```bash
 npm run build
-npm run deploy   # deploy to Vercel production
+npm run deploy       # deploy to Vercel (loads .env automatically)
 npm run typecheck
-```
-
-List channels:
-
-```bash
+npm run eval:smoke   # run smoke evals (loads .env automatically)
 npx eve channels list   # → eve, photon
 ```
+
+---
+
+## Reliability & evaluation
+
+Smoke evals live under `evals/smoke/` and run against a local dev server via the same HTTP surface as production:
+
+| Eval | Checks |
+|------|--------|
+| `smoke/greeting` | Agent responds to a hello without crashing |
+| `smoke/trip-intake` | Trip-planning prompt gets a relevant reply |
+| `smoke/maps-link` | Location request returns a Google Maps URL |
+
+```bash
+npm run eval:smoke
+# or all evals:
+npm run eval
+```
+
+**Latest smoke run:** 3/3 passed · 6/6 gates · ~12s
+
+```
+✓ smoke/greeting
+✓ smoke/trip-intake
+✓ smoke/maps-link  (google_maps_link tool: 100%)
+```
+
+Committed proof for judges: [`evals/results/smoke-summary.json`](evals/results/smoke-summary.json) (full local artifacts live under `.eve/evals/`, which is gitignored as build output).
+
+**Judges can verify by either:**
+
+1. Reading `evals/results/smoke-summary.json` in the repo
+2. Cloning and running `npm run eval:smoke` (requires `.env` — see Environment variables)
+3. Inspecting `evals/smoke/*.eval.ts` for what is being tested
+
+Memory uses Upstash Redis document storage (`fileMemory` + `redisDocuments`) — durable per-user notes without RediSearch, compatible with Upstash free tier.
 
 ---
 
@@ -178,12 +210,13 @@ Set the same variables in **Vercel → Project → Environment Variables** (Prod
 
 ## Deploy
 
+`npm run deploy` loads `.env` locally so the build can resolve Composio, Upstash, and AI Gateway credentials. Production secrets must also be set in **Vercel → Environment Variables**.
+
 ```bash
 npm run deploy
-# or: eve link && eve deploy
 ```
 
-Production URL example: `https://trippilot-dzulhelmy.vercel.app`
+Production URL: `https://trippilot-dzulhelmy.vercel.app`
 
 ---
 

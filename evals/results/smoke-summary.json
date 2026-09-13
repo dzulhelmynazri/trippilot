@@ -1,0 +1,31 @@
+{
+  "runAt": "2026-09-13T17:32:07.436Z",
+  "command": "npm run eval:smoke",
+  "passed": 3,
+  "failed": 0,
+  "totalEvals": 3,
+  "gatesPassed": 6,
+  "durationMs": 10181,
+  "evals": [
+    {
+      "id": "smoke/greeting",
+      "verdict": "passed",
+      "assertions": ["succeeded", "messageIncludes(/trip|travel|help|assist|plan/i)"]
+    },
+    {
+      "id": "smoke/trip-intake",
+      "verdict": "passed",
+      "assertions": ["succeeded", "includes(/tokyo|flight|hotel|date|budget|depart|travel|trip/i)"]
+    },
+    {
+      "id": "smoke/maps-link",
+      "verdict": "passed",
+      "assertions": [
+        "succeeded",
+        "calledTool(google_maps_link)",
+        "includes(/google.com/maps|maps.google/i)"
+      ]
+    }
+  ],
+  "reproduce": "Clone repo, add .env (see README), then run: npm run eval:smoke"
+}
