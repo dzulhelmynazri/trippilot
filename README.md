@@ -16,6 +16,7 @@ Built with [eve](https://eve.dev), deployed on [Vercel](https://vercel.com), del
 4. **Save itinerary** — structured page in the user's Notion workspace
 5. **Add calendar events** — flights, check-in, check-out, activities
 6. **Share map links** — tappable Google Maps URLs for every location
+7. **Trip brief** — remaining budget, day skeleton, and a packing list computed in code
 
 Each iMessage user connects their own Notion and Google Calendar accounts. TripPilot never mixes data between users.
 
@@ -83,6 +84,7 @@ agent/
   tools/
     composio.ts        # Search/connect tools, no process-wide cache
     update_trip.ts / get_trip.ts
+    trip_brief.ts       # Code-backed days, packing, next actions
     save_itinerary.ts  # Notion write, approval: always()
     add_calendar_events.ts
     google_maps_link.ts
@@ -99,6 +101,7 @@ Try this in iMessage after setup:
 ```
 Plan a 3-day trip to Tokyo in April, budget $2000.
 Find flights from Kuala Lumpur and a hotel near Shibuya.
+Send me the trip brief with packing and the day plan.
 ```
 
 Then:
@@ -139,7 +142,7 @@ npx eve channels list   # → eve, photon
 
 ## Reliability & evaluation
 
-Evals run against a local dev server via the same HTTP surface as production. Smoke covers boot + maps. Reliability covers the trip dossier and approval-gated writes.
+Evals run against a local dev server via the same HTTP surface as production. Smoke covers boot + maps. Reliability covers the trip dossier and approval-gated writes. Usefulness covers the code-backed trip brief.
 
 | Eval | Checks |
 |------|--------|
@@ -151,10 +154,12 @@ Evals run against a local dev server via the same HTTP surface as production. Sm
 | `reliability/save-deny` | Deny the parked save → tool `rejected`, never `completed` |
 | `reliability/save-approve` | Approve the parked save → tool leaves `pending` and executes |
 | `reliability/calendar-approval` | `add_calendar_events` parks on HITL approval (`pending`) |
+| `usefulness/trip-brief` | Tokyo + $800/$600 picks → `trip_brief` with $600 left, packing, day 1 |
 
 ```bash
 npm run eval:smoke
 npm run eval:reliability
+npm run eval:usefulness
 # or all evals:
 npm run eval
 ```
@@ -182,7 +187,7 @@ Full local artifacts live under `.eve/evals/` (gitignored as build output).
 **Judges can verify by either:**
 
 1. Reading the committed summaries in `evals/results/`
-2. Cloning and running `npm run eval:smoke` / `npm run eval:reliability` (requires `.env`)
+2. Cloning and running `npm run eval:smoke` / `npm run eval:reliability` / `npm run eval:usefulness` (requires `.env`)
 3. Inspecting `evals/smoke/*.eval.ts` and `evals/reliability/*.eval.ts`
 
 Memory uses Upstash Redis document storage (`fileMemory` + `redisDocuments`) — durable per-user notes without RediSearch, compatible with Upstash free tier.

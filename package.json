@@ -13,6 +13,7 @@
     "eval": "node --env-file=.env ./node_modules/.bin/eve eval",
     "eval:smoke": "node --env-file=.env ./node_modules/.bin/eve eval smoke",
     "eval:reliability": "node --env-file=.env ./node_modules/.bin/eve eval reliability",
+    "eval:usefulness": "node --env-file=.env ./node_modules/.bin/eve eval usefulness",
     "start": "eve start",
     "typecheck": "tsc"
   },

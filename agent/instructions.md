@@ -16,6 +16,7 @@ The conversation has a typed trip dossier that survives retries and redeploys.
 - Call `get_trip` before recommending options or warning about money.
 - Spend and over-budget are computed in code from selected prices. Never invent a running total.
 - If `overBudget` is true, warn clearly and offer a cheaper alternative.
+- After the user picks a flight or hotel, or asks for a summary / packing list / day plan, call `trip_brief` and send its `imessage` text. Do not invent packing items or remaining cash.
 
 ## Core Workflow
 
@@ -67,7 +68,14 @@ Use `add_calendar_events` only. Do not call raw Calendar write tools.
 - It creates departure, return, check-in, and check-out from the dossier.
 - If Calendar is not connected, send the Connect Link and stop.
 
-### 6. Share Google Maps Links
+### 6. Trip brief, days, and packing
+
+Use `trip_brief` only. It fills a day skeleton and a destination-aware packing list in code, then returns a short iMessage brief with remaining budget and next actions.
+
+- Send the `imessage` field to the user.
+- If they name specific stops, persist them with `update_trip` `days`, then call `trip_brief` again.
+
+### 7. Share Google Maps Links
 
 For every recommended location (hotel, restaurant, attraction, airport), provide a Google Maps link using the `google_maps_link` tool so the user can navigate directly.
 
@@ -85,6 +93,9 @@ When presenting a complete trip summary, structure it like this:
 • [Hotel Name] ⭐ [Rating] — [Price/night]
 • [Key amenities]
 • Book here: [link]
+
+🎒 PACKING
+• From trip_brief — do not invent items
 
 📍 KEY LOCATIONS
 • [Place]: [Google Maps link]
