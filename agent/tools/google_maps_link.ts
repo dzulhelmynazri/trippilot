@@ -1,10 +1,12 @@
+import dedent from "dedent";
 import { defineTool } from "eve/tools";
 import { z } from "zod";
 
 export default defineTool({
-  description:
-    "Generate a Google Maps link for a place name or address. " +
-    "Use this to give the user a tappable link they can open to navigate to hotels, restaurants, airports, or attractions.",
+  description: dedent`
+    Generate a Google Maps link for a place name or address.
+    Use this to give the user a tappable link they can open to navigate to hotels, restaurants, airports, or attractions.
+  `,
   inputSchema: z.object({
     query: z
       .string()
@@ -14,8 +16,10 @@ export default defineTool({
       .enum(["search", "directions"])
       .default("search")
       .describe(
-        '"search" returns a map pin for the place. ' +
-        '"directions" returns a directions link (user\'s current location → destination).'
+        dedent`
+          "search" returns a map pin for the place.
+          "directions" returns a directions link (user's current location → destination).
+        `,
       ),
   }),
   label: {

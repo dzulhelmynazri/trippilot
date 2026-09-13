@@ -19,6 +19,8 @@ Built with [eve](https://eve.dev), deployed on [Vercel](https://vercel.com), del
 
 Each iMessage user connects their own Notion and Google Calendar accounts. TripPilot never mixes data between users.
 
+Trip facts live in a typed session dossier (`update_trip` / `get_trip`). Spend vs budget is computed in code. Notion and Calendar writes go through approval-gated tools — the run parks until the user confirms.
+
 ---
 
 ## Architecture
@@ -72,11 +74,17 @@ flowchart LR
 agent/
   instructions.md      # TripPilot identity and travel workflow
   agent.ts             # Model config
+  lib/
+    trip.ts            # Durable typed trip dossier (defineState)
+    composio.ts        # Per-user session factory + write execute
   channels/
     photon.ts          # iMessage inbound/outbound + per-user auth
-    eve.ts             # HTTP session API
+    eve.ts             # HTTP session API (OIDC + localDev)
   tools/
-    composio.ts        # Per-user Composio sessions (flights, hotels, etc.)
+    composio.ts        # Search/connect tools, no process-wide cache
+    update_trip.ts / get_trip.ts
+    save_itinerary.ts  # Notion write, approval: always()
+    add_calendar_events.ts
     google_maps_link.ts
   memory/
     upstash-agentkit.ts  # Durable per-user memory
@@ -162,6 +170,8 @@ Committed proof for judges: [`evals/results/smoke-summary.json`](evals/results/s
 3. Inspecting `evals/smoke/*.eval.ts` for what is being tested
 
 Memory uses Upstash Redis document storage (`fileMemory` + `redisDocuments`) — durable per-user notes without RediSearch, compatible with Upstash free tier.
+
+Writes to Notion and Google Calendar are **approval-gated** (`save_itinerary`, `add_calendar_events`). The same slugs are blocked on raw Composio tools via `requireApprovalForTools`, so the model cannot skip the human pause.
 
 ---
 
