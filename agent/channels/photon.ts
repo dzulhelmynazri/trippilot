@@ -67,7 +67,7 @@ bot.onReaction(async (event: PhotonReaction) => {
     {
       context: [
         TAPBACK_CONTEXT,
-        `The user tapbacked ${decision === "approve" ? "❤️ / 👍" : "👎"} on a message.`,
+        `The user tapbacked ${decision === "approve" ? "❤️ / 👍" : "👎"} on a message. Settle the parked write. Do not call save_itinerary or add_calendar_events again.`,
       ],
       message: decision,
     },

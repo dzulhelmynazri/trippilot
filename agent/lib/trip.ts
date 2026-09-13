@@ -44,6 +44,7 @@ export type TripDossier = {
   days: TripDay[];
   weather?: TripWeather;
   notionPageUrl?: string;
+  notionSaved?: boolean;
   calendarEventCount: number;
 };
 
@@ -71,6 +72,10 @@ export function withBudget(next: TripDossier): TripDossier {
 export function remainingUsd(dossier: TripDossier): number | undefined {
   if (dossier.budgetUsd === undefined) return undefined;
   return dossier.budgetUsd - dossier.spentUsd;
+}
+
+export function itinerarySaved(dossier: TripDossier): boolean {
+  return Boolean(dossier.notionSaved || dossier.notionPageUrl);
 }
 
 export function withTripExtras(dossier: TripDossier): TripDossier {
@@ -246,7 +251,7 @@ export function nextActions(
         ? `Connect Notion: ${notion.connectUrl}`
         : "Notion is not connected — call trip_brief again for a Composio Connect Link",
     );
-  } else if (!dossier.notionPageUrl) {
+  } else if (!itinerarySaved(dossier)) {
     actions.push(
       "Approve save_itinerary — tap ❤️ / 👍 or reply approve (👎 / deny to cancel)",
     );

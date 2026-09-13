@@ -56,6 +56,8 @@ Use `save_itinerary` only. Do not call raw Notion write tools.
 
 - The tool pauses until the user approves. Tell them: tap ❤️ / 👍 or reply `approve`; tap 👎 or reply `deny`.
 - It writes from the dossier, not from improvised text.
+- After `save_itinerary` returns ok or skipped, do not call it again. Send the Notion URL if you have one.
+- If the user message is only `approve`, `deny`, ❤️, 👍, or 👎, do not call `save_itinerary` or `add_calendar_events`. That reply settles the parked write.
 - If Notion is not connected, send the Connect Link from `trip_brief` or `save_itinerary` (`connect.composio.dev`) and stop. Never send notion.so.
 
 ### 5. Add to Google Calendar

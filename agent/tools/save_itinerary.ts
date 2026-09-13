@@ -1,6 +1,5 @@
 import dedent from "dedent";
 import { defineTool } from "eve/tools";
-import { always } from "eve/tools/approval";
 import { z } from "zod";
 import {
   executeSessionTool,
@@ -9,7 +8,7 @@ import {
   requirePrincipalId,
   writeConnection,
 } from "../session";
-import { itineraryMarkdown, trip } from "../lib/trip";
+import { itineraryMarkdown, itinerarySaved, trip } from "../lib/trip";
 
 export default defineTool({
   description: dedent`
@@ -17,6 +16,7 @@ export default defineTool({
     Do not call raw Notion write tools.
     If Notion is not connected, return the Composio Connect Link and stop. Never send notion.so.
     When this tool parks, tell the user: tap ❤️ / 👍 or reply approve to save; tap 👎 or reply deny to cancel.
+    After this tool returns ok or skipped, do not call it again. A user reply of only approve or deny settles the parked call — do not start a new save.
   `,
   inputSchema: z.object({
     parentId: z
@@ -34,9 +34,15 @@ export default defineTool({
       .default(false)
       .describe("Create another page even if this session already saved one."),
   }),
-  approval: always(),
+  approval: ({ toolInput }) =>
+    itinerarySaved(trip.get()) && toolInput?.force !== true
+      ? "not-applicable"
+      : "user-approval",
   label: {
     start: () => "Save itinerary to Notion",
+  },
+  toModelOutput(output) {
+    return { type: "text", value: saveModelText(output) };
   },
   async execute({ parentId, parentTitle, force }, ctx) {
     const userId = requirePrincipalId(ctx.session.auth);
@@ -61,7 +67,7 @@ export default defineTool({
       };
     }
 
-    if (dossier.notionPageUrl && !force) {
+    if (itinerarySaved(dossier) && !force) {
       return {
         ok: true as const,
         skipped: true,
@@ -107,10 +113,12 @@ export default defineTool({
 
     const url =
       extractUrl(created, /https?:\/\/(?:www\.)?notion\.so\/[^\s"\\]+/i) ??
-      extractUrl(created.data, /https?:\/\/(?:www\.)?notion\.so\/[^\s"\\]+/i);
+      extractUrl(created.data, /https?:\/\/(?:www\.)?notion\.so\/[^\s"\\]+/i) ??
+      notionUrlFromId(firstNotionParentId(created.data ?? created));
 
     trip.update((current) => ({
       ...current,
+      notionSaved: true,
       notionPageUrl: url ?? current.notionPageUrl,
     }));
 
@@ -142,4 +150,29 @@ async function findParentPage(
     filter_value: "page",
   });
   return firstNotionParentId(fallback.data ?? fallback);
+}
+
+function notionUrlFromId(id?: string): string | undefined {
+  if (!id) return undefined;
+  return `https://www.notion.so/${id.replace(/-/g, "")}`;
+}
+
+function saveModelText(output: unknown): string {
+  if (!output || typeof output !== "object") {
+    return "Save failed. Do not retry save_itinerary in a loop.";
+  }
+  const record = output as Record<string, unknown>;
+  const url = typeof record.url === "string" ? record.url : undefined;
+  if (record.ok && record.skipped) {
+    return `Already saved${url ? `: ${url}` : ""}. Do not call save_itinerary again.`;
+  }
+  if (record.ok) {
+    return `Saved to Notion${url ? `: ${url}` : ""}. Do not call save_itinerary again.`;
+  }
+  const error =
+    typeof record.error === "string" ? record.error : "Save failed.";
+  if (record.needsParent) {
+    return `${error} Do not retry save_itinerary until the user gives a parent page title.`;
+  }
+  return error;
 }

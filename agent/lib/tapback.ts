@@ -6,7 +6,7 @@ export const TAPBACK_LEGEND =
   "Tap ❤️ / 👍 or reply approve to allow a pending save; tap 👎 or reply deny to cancel.";
 
 export const TAPBACK_CONTEXT =
-  "iMessage tapbacks settle a pending Notion/Calendar write: ❤️ or 👍 means approve; 👎 means deny. The user can also reply approve or deny.";
+  "iMessage tapbacks settle a pending Notion/Calendar write: ❤️ or 👍 means approve; 👎 means deny. The user can also reply approve or deny. If this message is only approve or deny, do not call save_itinerary or add_calendar_events again — that reply finishes the parked write.";
 
 const APPROVE = new Set([
   "❤️",
