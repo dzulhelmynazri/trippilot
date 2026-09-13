@@ -1,5 +1,5 @@
 import { defineAgent } from "eve";
 
 export default defineAgent({
-  model: "alibaba/qwen3.7-flash",
+  model: "google/gemini-2.5-flash",
 });

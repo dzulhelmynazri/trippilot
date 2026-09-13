@@ -64,7 +64,7 @@ flowchart LR
 | Deploy | Vercel + AI Gateway |
 | Integrations | Composio (Ignav, Blue Pillow, Notion, Google Calendar, Google Maps) |
 | Memory | Upstash Redis documents via `@upstash/agentkit-eve` |
-| Model | `alibaba/qwen3.7-flash` (Vercel AI Gateway) |
+| Model | `google/gemini-2.5-flash` (Vercel AI Gateway) |
 
 ---
 
@@ -139,35 +139,44 @@ npx eve channels list   # → eve, photon
 
 ## Reliability & evaluation
 
-Smoke evals live under `evals/smoke/` and run against a local dev server via the same HTTP surface as production:
+Evals run against a local dev server via the same HTTP surface as production. Smoke covers boot + maps. Reliability covers the trip dossier and approval-gated writes.
 
 | Eval | Checks |
 |------|--------|
 | `smoke/greeting` | Agent responds to a hello without crashing |
-| `smoke/trip-intake` | Trip-planning prompt gets a relevant reply |
+| `smoke/trip-intake` | Trip prompt calls `update_trip` with Tokyo |
 | `smoke/maps-link` | Location request returns a Google Maps URL |
+| `reliability/budget-over` | $400 budget + $1800 flight → dossier + over-budget warning |
+| `reliability/save-approval` | `save_itinerary` parks on HITL approval (`pending`) |
 
 ```bash
 npm run eval:smoke
+npm run eval:reliability
 # or all evals:
 npm run eval
 ```
 
-**Latest smoke run:** 3/3 passed · 6/6 gates · ~12s
+Runs use `maxConcurrency: 1` to stay under AI Gateway free-tier rate limits.
+
+**Latest reliability run:** 2/2 passed · 8/8 gates · ~11s · `google/gemini-2.5-flash`
 
 ```
-✓ smoke/greeting
-✓ smoke/trip-intake
-✓ smoke/maps-link  (google_maps_link tool: 100%)
+✓ reliability/budget-over   5/5 gates  (update_trip Tokyo + $400 + $1800 flight, warned over budget)
+✓ reliability/save-approval 3/3 gates  (update_trip then save_itinerary parked pending)
 ```
 
-Committed proof for judges: [`evals/results/smoke-summary.json`](evals/results/smoke-summary.json) (full local artifacts live under `.eve/evals/`, which is gitignored as build output).
+Committed proof for judges:
+
+- [`evals/results/smoke-summary.json`](evals/results/smoke-summary.json)
+- [`evals/results/reliability-summary.json`](evals/results/reliability-summary.json)
+
+Full local artifacts live under `.eve/evals/` (gitignored as build output).
 
 **Judges can verify by either:**
 
-1. Reading `evals/results/smoke-summary.json` in the repo
-2. Cloning and running `npm run eval:smoke` (requires `.env` — see Environment variables)
-3. Inspecting `evals/smoke/*.eval.ts` for what is being tested
+1. Reading the committed summaries in `evals/results/`
+2. Cloning and running `npm run eval:smoke` / `npm run eval:reliability` (requires `.env`)
+3. Inspecting `evals/smoke/*.eval.ts` and `evals/reliability/*.eval.ts`
 
 Memory uses Upstash Redis document storage (`fileMemory` + `redisDocuments`) — durable per-user notes without RediSearch, compatible with Upstash free tier.
 
