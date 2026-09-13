@@ -2,8 +2,9 @@ import dedent from "dedent";
 import { defineTool } from "eve/tools";
 import { always } from "eve/tools/approval";
 import { z } from "zod";
+import { dayCalendarEvents } from "../lib/calendar";
 import { executeUserTool, extractUrl, requirePrincipalId } from "../lib/composio";
-import { trip } from "../lib/trip";
+import { eventDateTime, trip, withTripExtras } from "../lib/trip";
 
 const extraEventSchema = z.object({
   summary: z.string().min(1),
@@ -21,7 +22,7 @@ const extraEventSchema = z.object({
 export default defineTool({
   description: dedent`
     Create Google Calendar events from the durable trip dossier after the user approves.
-    Writes departure, return, hotel check-in, and any extra events.
+    Writes departure, return, hotel check-in, walkable day-plan stops from the dossier, and any extra events.
     Do not call raw Calendar write tools.
   `,
   inputSchema: z.object({
@@ -34,7 +35,8 @@ export default defineTool({
   },
   async execute({ timezone, extraEvents }, ctx) {
     const userId = requirePrincipalId(ctx.session.auth);
-    const dossier = trip.get();
+    const dossier = withTripExtras(trip.get());
+    trip.update(() => dossier);
 
     if (!dossier.destination) {
       return {
@@ -45,6 +47,7 @@ export default defineTool({
 
     const planned = [
       ...coreEvents(dossier, timezone),
+      ...dayCalendarEvents(dossier, timezone),
       ...extraEvents.map((event) => ({
         summary: event.summary,
         start_datetime: event.startDatetime,
@@ -63,7 +66,7 @@ export default defineTool({
         ok: false as const,
         error: dedent`
           Nothing to add.
-          Set departDate/returnDate or a hotel on the dossier, or pass extraEvents.
+          Set dates or a hotel on the dossier so the day plan can be written, or pass extraEvents.
         `,
       };
     }
@@ -107,10 +110,21 @@ function coreEvents(
 ) {
   const events: Record<string, unknown>[] = [];
 
-  if (dossier.departDate) {
+  const departAt = eventDateTime(
+    dossier.departDate,
+    dossier.flight?.departAt,
+    "09:00:00",
+  );
+  const returnAt = eventDateTime(
+    dossier.returnDate,
+    dossier.flight?.returnAt,
+    "18:00:00",
+  );
+
+  if (departAt) {
     events.push({
       summary: `✈️ Depart ${dossier.origin ?? ""} → ${dossier.destination}`.trim(),
-      start_datetime: `${dossier.departDate}T09:00:00`,
+      start_datetime: departAt,
       event_duration_hour: 3,
       location: dossier.origin,
       description: dossier.flight
@@ -124,10 +138,10 @@ function coreEvents(
     });
   }
 
-  if (dossier.returnDate) {
+  if (returnAt) {
     events.push({
       summary: `✈️ Return ${dossier.destination} → ${dossier.origin ?? ""}`.trim(),
-      start_datetime: `${dossier.returnDate}T18:00:00`,
+      start_datetime: returnAt,
       event_duration_hour: 3,
       location: dossier.destination,
       description: dossier.flight

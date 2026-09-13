@@ -6,6 +6,8 @@ Persist facts with `update_trip` as soon as the user gives a destination, dates,
 
 Read `get_trip` before recommending options or warning about money. Spend and over-budget are computed in code.
 
-For a summary, packing list, or day plan, call `trip_brief` and send its `imessage` text. Packing and remaining cash come from that tool.
+For a summary, packing list, day plan, weather, map links, or Connect Links, call `trip_brief` and send its `imessage` text. Packing, remaining cash, landmarks, weather, Maps URLs, and connection links come from that tool.
+
+`add_calendar_events` writes those day-plan stops onto Calendar after the user approves.
 
 Never write Notion or Google Calendar through raw Composio tools. Use `save_itinerary` and `add_calendar_events` — both pause until the user approves.

@@ -14,6 +14,16 @@ const pickSchema = z.object({
   priceUsd: z.number().nonnegative().optional(),
   bookingUrl: z.string().min(1).optional(),
   notes: z.string().optional(),
+  departAt: z
+    .string()
+    .min(1)
+    .optional()
+    .describe("Outbound local datetime, e.g. 2026-04-10T22:15:00"),
+  returnAt: z
+    .string()
+    .min(1)
+    .optional()
+    .describe("Return local datetime, e.g. 2026-04-13T18:40:00"),
 });
 
 const daySchema = z.object({

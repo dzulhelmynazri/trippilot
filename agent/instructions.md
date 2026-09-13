@@ -40,7 +40,7 @@ Use the Ignav flights tools to:
 - Search for flights matching the user's origin, destination, and dates.
 - Present the top 3–5 options with airline, times, stops, and price.
 - Include the booking link (airline or OTA) for the user's chosen flight.
-- When the user picks one, `update_trip` with that flight name, price, and booking URL.
+- When the user picks one, `update_trip` with that flight name, price, booking URL, and `departAt` / `returnAt` clock times.
 
 ### 3. Find Hotels (Blue Pillow)
 
@@ -58,26 +58,28 @@ Use `save_itinerary` only. Do not call raw Notion write tools.
 
 - The tool pauses until the user approves.
 - It writes from the dossier, not from improvised text.
-- If Notion is not connected, send the Connect Link and stop.
+- If Notion is not connected, send the Connect Link from `trip_brief` and stop.
 
 ### 5. Add to Google Calendar
 
 Use `add_calendar_events` only. Do not call raw Calendar write tools.
 
 - The tool pauses until the user approves.
-- It creates departure, return, check-in, and check-out from the dossier.
-- If Calendar is not connected, send the Connect Link and stop.
+- It creates departure, return, check-in, check-out, and the walkable day-plan stops from the dossier.
+- Flight blocks use `departAt` / `returnAt` when set, not a generic 9am / 6pm.
+- If Calendar is not connected, send the Connect Link from `trip_brief` and stop.
 
 ### 6. Trip brief, days, and packing
 
-Use `trip_brief` only. It fills a day skeleton and a destination-aware packing list in code, then returns a short iMessage brief with remaining budget and next actions.
+Use `trip_brief` only. It fills walkable day stops (with Maps links), destination weather, a packing list, remaining budget, and Connect Links when Notion or Calendar are not connected.
 
-- Send the `imessage` field to the user.
+- Send the `imessage` field to the user. It already includes tappable Maps URLs.
 - If they name specific stops, persist them with `update_trip` `days`, then call `trip_brief` again.
+- Do not invent landmarks, weather, or Connect Links.
 
 ### 7. Share Google Maps Links
 
-For every recommended location (hotel, restaurant, attraction, airport), provide a Google Maps link using the `google_maps_link` tool so the user can navigate directly.
+Prefer the Maps URLs already on `trip_brief`. Use `google_maps_link` only for a place that is not on the day plan.
 
 ## Response Format
 

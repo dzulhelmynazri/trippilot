@@ -1,6 +1,7 @@
 import dedent from "dedent";
 import { defineTool } from "eve/tools";
 import { z } from "zod";
+import { mapsDirectionsUrl, mapsSearchUrl } from "../lib/maps";
 
 export default defineTool({
   description: dedent`
@@ -26,18 +27,16 @@ export default defineTool({
     start: ({ query }) => `Map link for ${query}`,
   },
   execute({ query, mode }) {
-    const encoded = encodeURIComponent(query);
-
     if (mode === "directions") {
       return {
-        url: `https://www.google.com/maps/dir/?api=1&destination=${encoded}`,
+        url: mapsDirectionsUrl(query),
         query,
         type: "directions" as const,
       };
     }
 
     return {
-      url: `https://www.google.com/maps/search/?api=1&query=${encoded}`,
+      url: mapsSearchUrl(query),
       query,
       type: "search" as const,
     };

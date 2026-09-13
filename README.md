@@ -14,9 +14,9 @@ Built with [eve](https://eve.dev), deployed on [Vercel](https://vercel.com), del
 2. **Search flights** — via Ignav (Composio)
 3. **Find hotels** — via Blue Pillow (Composio)
 4. **Save itinerary** — structured page in the user's Notion workspace
-5. **Add calendar events** — flights, check-in, check-out, activities
-6. **Share map links** — tappable Google Maps URLs for every location
-7. **Trip brief** — remaining budget, day skeleton, and a packing list computed in code
+5. **Add calendar events** — flights, check-in, check-out, and walkable day-plan stops
+6. **Share map links** — tappable Google Maps URLs on the trip brief
+7. **Trip brief** — remaining budget, weather, real day stops, Maps links, packing, and Connect Links when apps are not connected
 
 Each iMessage user connects their own Notion and Google Calendar accounts. TripPilot never mixes data between users.
 
@@ -77,6 +77,8 @@ agent/
   agent.ts             # Model config
   lib/
     trip.ts            # Durable typed trip dossier (defineState)
+    destinations.ts    # Code-backed day-plan playbooks
+    maps.ts / calendar.ts
     composio.ts        # Per-user session factory + write execute
   channels/
     photon.ts          # iMessage inbound/outbound + per-user auth
@@ -154,7 +156,7 @@ Evals run against a local dev server via the same HTTP surface as production. Sm
 | `reliability/save-deny` | Deny the parked save → tool `rejected`, never `completed` |
 | `reliability/save-approve` | Approve the parked save → tool leaves `pending` and executes |
 | `reliability/calendar-approval` | `add_calendar_events` parks on HITL approval (`pending`) |
-| `usefulness/trip-brief` | Tokyo + $800/$600 picks → `trip_brief` with $600 left, packing, day 1 |
+| `usefulness/trip-brief` | Tokyo + $800/$600 picks → brief with $600 left, stops, Maps, weather, flight time |
 
 ```bash
 npm run eval:smoke
@@ -165,6 +167,14 @@ npm run eval
 ```
 
 Runs use `maxConcurrency: 1` to stay under AI Gateway free-tier rate limits.
+
+**Latest smoke run:** 3/3 passed · 6/6 gates
+
+```
+✓ smoke/greeting     2/2  (hello without crash)
+✓ smoke/trip-intake  2/2  (Tokyo trip reply)
+✓ smoke/maps-link    2/2  (Google Maps URL)
+```
 
 **Latest reliability run:** 4 passing evals · 19 gates · `google/gemini-2.5-flash`
 
@@ -177,10 +187,17 @@ Runs use `maxConcurrency: 1` to stay under AI Gateway free-tier rate limits.
 
 `reliability/save-approve` is authored (approve → `action.result`, not user-rejected). Last runs hit AI Gateway free-tier 429s on the follow-up model call after the tool executed.
 
+**Latest usefulness run:** 1/1 passed · 9/9 gates · `google/gemini-2.5-flash`
+
+```
+✓ usefulness/trip-brief  9/9  ($600 left, Tokyo stops, Maps, 22:15, weather/umbrella)
+```
+
 Committed proof for judges:
 
 - [`evals/results/smoke-summary.json`](evals/results/smoke-summary.json)
 - [`evals/results/reliability-summary.json`](evals/results/reliability-summary.json)
+- [`evals/results/usefulness-summary.json`](evals/results/usefulness-summary.json)
 
 Full local artifacts live under `.eve/evals/` (gitignored as build output).
 

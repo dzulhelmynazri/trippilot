@@ -85,6 +85,45 @@ export async function executeUserTool(
   }
 }
 
+export type WriteConnection = {
+  toolkit: "notion" | "googlecalendar";
+  connected: boolean;
+  connectUrl?: string;
+};
+
+export async function writeConnections(
+  userId: string,
+): Promise<WriteConnection[]> {
+  return Promise.all([
+    connectionFor(userId, "notion"),
+    connectionFor(userId, "googlecalendar"),
+  ]);
+}
+
+async function connectionFor(
+  userId: string,
+  toolkit: WriteConnection["toolkit"],
+): Promise<WriteConnection> {
+  try {
+    const listed = await composio.connectedAccounts.list({
+      userIds: [userId],
+      toolkitSlugs: [toolkit],
+      statuses: ["ACTIVE"],
+    });
+    if ((listed.items?.length ?? 0) > 0) {
+      return { toolkit, connected: true };
+    }
+    const request = await composio.toolkits.authorize(userId, toolkit);
+    return {
+      toolkit,
+      connected: false,
+      connectUrl: request.redirectUrl ?? undefined,
+    };
+  } catch {
+    return { toolkit, connected: false };
+  }
+}
+
 export function compact<T extends Record<string, unknown>>(
   value: T,
 ): Record<string, unknown> {

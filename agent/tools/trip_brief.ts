@@ -2,6 +2,12 @@ import dedent from "dedent";
 import { defineTool } from "eve/tools";
 import { z } from "zod";
 import {
+  requirePrincipalId,
+  writeConnections,
+  type WriteConnection,
+} from "../lib/composio";
+import {
+  briefMapLinks,
   nextActions,
   remainingUsd,
   trip,
@@ -9,27 +15,34 @@ import {
   tripNights,
   withTripExtras,
 } from "../lib/trip";
+import { fetchTripWeather } from "../lib/weather";
 
 export default defineTool({
   description: dedent`
-    Build a code-backed trip brief from the durable dossier: nights, remaining budget, day skeleton, packing list, and next actions.
-    Call this after the user picks a flight or hotel, or when they ask for a summary, packing list, or day plan.
-    Do not invent packing or remaining cash — use this tool's output.
+    Build a code-backed trip brief from the durable dossier: nights, remaining budget, weather, walkable day stops with Maps links, packing list, Connect Links if Notion/Calendar are not connected, and next actions.
+    Call this after the user picks a flight or hotel, or when they ask for a summary, packing list, day plan, weather, or map links.
+    Do not invent packing, remaining cash, landmarks, weather, map URLs, or Connect Links — use this tool's output.
   `,
   inputSchema: z.object({}),
   label: {
     start: () => "Build trip brief",
   },
-  execute() {
-    const ready = withTripExtras(trip.get());
-    trip.update(() => ready);
-
-    if (!ready.destination) {
+  async execute(_input, ctx) {
+    const current = trip.get();
+    if (!current.destination) {
       return {
         ok: false as const,
         error: "No destination on the trip dossier. Call update_trip first.",
       };
     }
+
+    const weather = current.weather ?? (await fetchTripWeather(current));
+    const connections = await safeWriteConnections(ctx.session.auth);
+    const ready = withTripExtras({
+      ...current,
+      weather: weather ?? current.weather,
+    });
+    trip.update(() => ready);
 
     return {
       ok: true as const,
@@ -37,10 +50,23 @@ export default defineTool({
       nights: tripNights(ready),
       remainingUsd: remainingUsd(ready),
       overBudget: ready.overBudget,
+      weather: ready.weather,
       packing: ready.packing,
       days: ready.days,
-      nextActions: nextActions(ready),
-      imessage: tripBriefText(ready),
+      maps: briefMapLinks(ready),
+      connections,
+      nextActions: nextActions(ready, connections),
+      imessage: tripBriefText(ready, connections),
     };
   },
 });
+
+async function safeWriteConnections(
+  auth: { current?: { principalId?: string } | null },
+): Promise<WriteConnection[]> {
+  try {
+    return await writeConnections(requirePrincipalId(auth));
+  } catch {
+    return [];
+  }
+}

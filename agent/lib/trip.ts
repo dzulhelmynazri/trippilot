@@ -1,11 +1,18 @@
 import dedent from "dedent";
 import { defineState } from "eve/context";
+import { isStayTransition, walkableStops } from "./calendar";
+import type { WriteConnection } from "./composio";
+import { playbookStops } from "./destinations";
+import { mapsSearchUrl } from "./maps";
+import type { TripWeather } from "./weather";
 
 export type TripPick = {
   name: string;
   priceUsd?: number;
   bookingUrl?: string;
   notes?: string;
+  departAt?: string;
+  returnAt?: string;
 };
 
 export type TripDayItem = {
@@ -34,6 +41,7 @@ export type TripDossier = {
   overBudget: boolean;
   packing: string[];
   days: TripDay[];
+  weather?: TripWeather;
   notionPageUrl?: string;
   calendarEventCount: number;
 };
@@ -69,7 +77,7 @@ export function withTripExtras(dossier: TripDossier): TripDossier {
   return {
     ...next,
     packing: next.packing?.length ? next.packing : defaultPacking(next),
-    days: next.days?.length ? next.days : defaultDays(next),
+    days: daysNeedStops(next.days) ? defaultDays(next) : next.days,
   };
 }
 
@@ -117,22 +125,67 @@ export function defaultPacking(dossier: TripDossier): string[] {
     items.push("Offline copies of booking confirmations");
   }
 
-  if (dossier.preferences?.toLowerCase().includes("rain")) {
+  if (
+    dossier.preferences?.toLowerCase().includes("rain") ||
+    (dossier.weather?.wetDays ?? 0) > 0
+  ) {
     items.push("Compact umbrella");
+  }
+  if (dossier.weather?.lowC !== undefined && dossier.weather.lowC <= 12) {
+    items.push("Warm layer for cool mornings");
+  }
+  if (dossier.weather?.highC !== undefined && dossier.weather.highC >= 26) {
+    items.push("Sunscreen and breathable clothes");
   }
 
   return items;
+}
+
+export function eventDateTime(
+  date: string | undefined,
+  explicit: string | undefined,
+  fallbackTime: string,
+): string | undefined {
+  if (explicit) {
+    if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(explicit)) {
+      return explicit.length === 16 ? `${explicit}:00` : explicit.slice(0, 19);
+    }
+    if (date && /^\d{2}:\d{2}/.test(explicit)) {
+      const time = explicit.length === 5 ? `${explicit}:00` : explicit;
+      return `${date}T${time}`;
+    }
+  }
+  if (!date) return undefined;
+  return `${date}T${fallbackTime}`;
+}
+
+export function clockLabel(value?: string): string | undefined {
+  if (!value) return undefined;
+  const match = /T(\d{2}:\d{2})/.exec(value) ?? /^(\d{2}:\d{2})/.exec(value);
+  return match?.[1];
 }
 
 export function defaultDays(dossier: TripDossier): TripDay[] {
   const dates = tripDates(dossier);
   if (dates.length === 0) return [];
   const destination = dossier.destination ?? "destination";
+  const stops = playbookStops(dossier.destination);
+  let cursor = 0;
+  const take = (count: number): TripDayItem[] => {
+    const slice = stops.slice(cursor, cursor + count);
+    cursor += slice.length;
+    return slice.map((stop) => ({
+      name: stop.name,
+      mapsQuery: stop.mapsQuery,
+    }));
+  };
+
   return dates.map((date, index) => {
+    const last = index === dates.length - 1;
     const title =
       index === 0
         ? `Arrive · ${destination}`
-        : index === dates.length - 1
+        : last
           ? `Depart · ${destination}`
           : `Explore · ${destination}`;
     const items: TripDayItem[] = [];
@@ -142,7 +195,8 @@ export function defaultDays(dossier: TripDossier): TripDay[] {
         mapsQuery: dossier.hotel.name,
       });
     }
-    if (index === dates.length - 1 && dossier.hotel) {
+    items.push(...take(index === 0 || last ? 1 : 2));
+    if (last && dossier.hotel) {
       items.push({
         name: `Check out · ${dossier.hotel.name}`,
         mapsQuery: dossier.hotel.name,
@@ -152,17 +206,53 @@ export function defaultDays(dossier: TripDossier): TripDay[] {
   });
 }
 
-export function nextActions(dossier: TripDossier): string[] {
+export function briefMapLinks(
+  dossier: TripDossier,
+): { name: string; url: string }[] {
+  const seen = new Set<string>();
+  const links: { name: string; url: string }[] = [];
+  const push = (name: string, query: string) => {
+    const url = mapsSearchUrl(query);
+    if (seen.has(url)) return;
+    seen.add(url);
+    links.push({ name, url });
+  };
+
+  if (dossier.hotel) push(dossier.hotel.name, dossier.hotel.name);
+  for (const item of walkableStops(dossier)) {
+    push(item.name, item.mapsQuery ?? item.name);
+  }
+  return links;
+}
+
+export function nextActions(
+  dossier: TripDossier,
+  connections: readonly WriteConnection[] = [],
+): string[] {
   const actions: string[] = [];
   if (!dossier.flight) actions.push("Pick a flight and save it on the dossier");
   if (!dossier.hotel) actions.push("Pick a hotel and save it on the dossier");
   if (dossier.overBudget) {
     actions.push("Choose a cheaper flight or hotel — the plan is over budget");
   }
-  if (!dossier.notionPageUrl) {
+  const notion = connections.find((item) => item.toolkit === "notion");
+  const calendar = connections.find((item) => item.toolkit === "googlecalendar");
+  if (notion && !notion.connected) {
+    actions.push(
+      notion.connectUrl
+        ? `Connect Notion: ${notion.connectUrl}`
+        : "Connect Notion in chat, then approve save_itinerary",
+    );
+  } else if (!dossier.notionPageUrl) {
     actions.push("Approve save_itinerary to write the plan to Notion");
   }
-  if (dossier.calendarEventCount === 0) {
+  if (calendar && !calendar.connected) {
+    actions.push(
+      calendar.connectUrl
+        ? `Connect Calendar: ${calendar.connectUrl}`
+        : "Connect Google Calendar in chat, then approve add_calendar_events",
+    );
+  } else if (dossier.calendarEventCount === 0) {
     actions.push("Approve add_calendar_events to block the trip on Calendar");
   }
   if (dossier.hotel) {
@@ -195,7 +285,10 @@ export function itineraryMarkdown(dossier: TripDossier): string {
               day.items.length === 0
                 ? "  - Open day"
                 : day.items
-                    .map((item) => `  - ${item.name}`)
+                    .map((item) => {
+                      const query = item.mapsQuery ?? item.name;
+                      return `  - ${item.name} — ${mapsSearchUrl(query)}`;
+                    })
                     .join("\n");
             return `- ${day.date} · ${day.title}\n${items}`;
           })
@@ -217,6 +310,7 @@ export function itineraryMarkdown(dossier: TripDossier): string {
     - ${budgetLine}
     - Travelers: ${ready.travelers ?? "not set"}
     ${ready.preferences ? `- Preferences: ${ready.preferences}` : ""}
+    ${ready.weather ? `- Weather: ${ready.weather.summary} (${ready.weather.source})` : ""}
 
     ## Important Links
     ${ready.flight?.bookingUrl ? `- Flight: ${ready.flight.bookingUrl}` : ""}
@@ -227,7 +321,10 @@ export function itineraryMarkdown(dossier: TripDossier): string {
   `.replace(/\n{3,}/g, "\n\n");
 }
 
-export function tripBriefText(dossier: TripDossier): string {
+export function tripBriefText(
+  dossier: TripDossier,
+  connections: readonly WriteConnection[] = [],
+): string {
   const ready = withTripExtras(dossier);
   const remaining = remainingUsd(ready);
   const nights = tripNights(ready);
@@ -246,18 +343,40 @@ export function tripBriefText(dossier: TripDossier): string {
       nights === undefined ? "" : ` · ${nights} nights`
     }`,
     money,
-    ready.flight ? `✈️ ${ready.flight.name}` : "✈️ Flight not picked",
-    ready.hotel ? `🏨 ${ready.hotel.name}` : "🏨 Hotel not picked",
+    ready.weather
+      ? `🌤️ ${ready.weather.summary}${ready.weather.source === "typical" ? " · typical" : ""}`
+      : undefined,
+    ready.flight
+      ? `✈️ ${ready.flight.name}${clockLabel(ready.flight.departAt) ? ` · ${clockLabel(ready.flight.departAt)}` : ""}`
+      : "✈️ Flight not picked",
+    ready.hotel
+      ? `🏨 ${ready.hotel.name} — ${mapsSearchUrl(ready.hotel.name)}`
+      : "🏨 Hotel not picked",
     "",
     "📅 DAYS",
-    ...ready.days.map((day) => `• ${day.date} · ${day.title}`),
+    ...ready.days.flatMap((day) => [
+      `• ${day.date} · ${day.title}`,
+      ...day.items
+        .filter((item) => !isStayTransition(item.name))
+        .map((item) => {
+          const query = item.mapsQuery ?? item.name;
+          return `  ${item.name} — ${mapsSearchUrl(query)}`;
+        }),
+    ]),
     "",
     "🎒 PACK",
     ...ready.packing.slice(0, 6).map((item) => `• ${item}`),
     "",
     "➡️ NEXT",
-    ...nextActions(ready).map((action) => `• ${action}`),
-  ].join("\n");
+    ...nextActions(ready, connections).map((action) => `• ${action}`),
+  ]
+    .filter((line) => line !== undefined)
+    .join("\n");
+}
+
+function daysNeedStops(days?: TripDay[]): boolean {
+  if (!days?.length) return true;
+  return days.every((day) => !day.items?.length);
 }
 
 function parseYmd(value?: string): number | undefined {
@@ -276,6 +395,8 @@ function pickMarkdown(pick?: TripPick): string {
   return [
     `- ${pick.name}`,
     pick.priceUsd !== undefined ? `- Price: $${pick.priceUsd}` : undefined,
+    clockLabel(pick.departAt) ? `- Depart: ${clockLabel(pick.departAt)}` : undefined,
+    clockLabel(pick.returnAt) ? `- Return: ${clockLabel(pick.returnAt)}` : undefined,
     pick.bookingUrl ? `- Book: ${pick.bookingUrl}` : undefined,
     pick.notes ? `- Notes: ${pick.notes}` : undefined,
   ]
