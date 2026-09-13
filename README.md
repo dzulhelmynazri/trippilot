@@ -8,7 +8,7 @@ Built with [eve](https://eve.dev), run locally in the terminal UI, with live far
 
 **[Watch the demo](https://youtu.be/8yOPQebV5PU)**
 
-[![TripPilot demo](https://img.youtube.com/vi/8yOPQebV5PU/maxresdefault.jpg)](https://youtu.be/8yOPQebV5PU)
+![TripPilot adding 8 Tokyo trip events to Google Calendar](docs/demo.png)
 
 ---
 
