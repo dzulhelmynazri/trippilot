@@ -64,10 +64,25 @@ export async function executeUserTool(
   const tools = composio.tools as {
     execute: (
       toolSlug: string,
-      body: { userId: string; arguments: Record<string, unknown> },
+      body: {
+        userId: string;
+        arguments: Record<string, unknown>;
+        dangerouslySkipVersionCheck?: boolean;
+      },
     ) => Promise<ToolExecuteResult>;
   };
-  return tools.execute(slug, { userId, arguments: compact(args) });
+  try {
+    return await tools.execute(slug, {
+      userId,
+      arguments: compact(args),
+      dangerouslySkipVersionCheck: true,
+    });
+  } catch (error) {
+    return {
+      successful: false,
+      error: error instanceof Error ? error.message : String(error),
+    };
+  }
 }
 
 export function compact<T extends Record<string, unknown>>(

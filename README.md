@@ -148,6 +148,8 @@ Evals run against a local dev server via the same HTTP surface as production. Sm
 | `smoke/maps-link` | Location request returns a Google Maps URL |
 | `reliability/budget-over` | $400 budget + $1800 flight → dossier + over-budget warning |
 | `reliability/save-approval` | `save_itinerary` parks on HITL approval (`pending`) |
+| `reliability/save-deny` | Deny the parked save → tool `rejected`, never `completed` |
+| `reliability/save-approve` | Approve the parked save → tool leaves `pending` and executes |
 | `reliability/calendar-approval` | `add_calendar_events` parks on HITL approval (`pending`) |
 
 ```bash
@@ -159,13 +161,16 @@ npm run eval
 
 Runs use `maxConcurrency: 1` to stay under AI Gateway free-tier rate limits.
 
-**Latest reliability run:** 3/3 passed · 11/11 gates · `google/gemini-2.5-flash`
+**Latest reliability run:** 4 passing evals · 19 gates · `google/gemini-2.5-flash`
 
 ```
 ✓ reliability/budget-over        5/5  (dossier + over-budget warning)
 ✓ reliability/save-approval      3/3  (save_itinerary parked pending)
 ✓ reliability/calendar-approval  3/3  (add_calendar_events parked pending)
+✓ reliability/save-deny          8/8  (deny → rejected, never completed)
 ```
+
+`reliability/save-approve` is authored (approve → `action.result`, not user-rejected). Last runs hit AI Gateway free-tier 429s on the follow-up model call after the tool executed.
 
 Committed proof for judges:
 

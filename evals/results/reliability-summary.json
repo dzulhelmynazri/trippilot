@@ -1,13 +1,13 @@
 {
-  "runAt": "2026-09-13T18:13:00.000Z",
-  "command": "npm run eval:reliability",
+  "runAt": "2026-09-13T18:20:00.000Z",
+  "command": "npm run eval:reliability && eve eval reliability/save-deny",
   "model": "google/gemini-2.5-flash",
-  "passed": 3,
+  "passed": 4,
   "failed": 0,
-  "totalEvals": 3,
-  "gatesPassed": 11,
+  "totalEvals": 4,
+  "gatesPassed": 19,
   "gatesFailed": 0,
-  "durationMs": 17118,
+  "durationMs": 35500,
   "evals": [
     {
       "id": "reliability/budget-over",
@@ -39,6 +39,21 @@
         "calledTool(update_trip) destination=/tokyo/i",
         "parked",
         "calledTool(add_calendar_events, status=pending)"
+      ]
+    },
+    {
+      "id": "reliability/save-deny",
+      "verdict": "passed",
+      "runAt": "2026-09-13T18:20:00.000Z",
+      "assertions": [
+        "calledTool(update_trip) destination=/tokyo/i",
+        "parked",
+        "calledTool(save_itinerary, status=pending)",
+        "requireInputRequest(save_itinerary)",
+        "succeeded after deny",
+        "calledTool(save_itinerary, status=rejected, output=/denied/)",
+        "calledTool(save_itinerary, status=completed, count=0)",
+        "calledTool(save_itinerary, status=pending, count=0)"
       ]
     }
   ],
