@@ -184,40 +184,7 @@ npm run eval
 
 Runs use `maxConcurrency: 1` to stay under AI Gateway free-tier rate limits.
 
-**Latest smoke run:** 3/3 passed · 6/6 gates
-
-```
-✓ smoke/greeting     2/2  (hello without crash)
-✓ smoke/trip-intake  2/2  (Tokyo trip reply)
-✓ smoke/maps-link    2/2  (Google Maps URL)
-```
-
-**Latest reliability run:** 4 passing evals · 19 gates · `google/gemini-2.5-flash`
-
-```
-✓ reliability/budget-over        5/5  (dossier + over-budget warning)
-✓ reliability/save-approval      3/3  (save_itinerary parked pending)
-✓ reliability/calendar-approval  3/3  (add_calendar_events parked pending)
-✓ reliability/save-deny          8/8  (deny → rejected, never completed)
-```
-
-`reliability/save-approve` is authored (approve → `action.result`, not user-rejected). Last runs hit AI Gateway free-tier 429s on the follow-up model call after the tool executed.
-
-**Latest usefulness run:** 1/1 passed · 9/9 gates · `google/gemini-2.5-flash`
-
-```
-✓ usefulness/trip-brief  9/9  ($600 left, Tokyo stops, Maps, 22:15, weather/umbrella)
-```
-
-**Latest originality run:** 1/2 passed · `google/gemini-2.5-flash`
-
-```
-✓ originality/budget-fork  8/8  (keep hotel / keep flight, $400 targets)
-```
-
-`originality/tapback-deny` is authored (👎 → deny → `save_itinerary` rejected). First run settled the write (7 HITL gates) then hit AI Gateway free-tier 429 on the follow-up model call.
-
-Committed proof for judges:
+`reliability/save-approve` and `originality/tapback-deny` are authored; latest runs settled the HITL write, then hit AI Gateway free-tier 429s on the follow-up model call. Committed proof for judges:
 
 - [`evals/results/smoke-summary.json`](evals/results/smoke-summary.json)
 - [`evals/results/reliability-summary.json`](evals/results/reliability-summary.json)

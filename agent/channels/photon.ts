@@ -1,8 +1,8 @@
+import { createMemoryState } from "@chat-adapter/state-memory";
+import { createiMessageAdapter } from "@photon-ai/chat-adapter-imessage";
 import { vercelOidc } from "eve/channels/auth";
 import { chatSdkChannel, messageToUserContent } from "eve/channels/chat-sdk";
 import { defaultPhotonAuth } from "eve/channels/photon";
-import { createMemoryState } from "../../node_modules/eve/dist/src/compiled/@chat-adapter/state-memory/index.js";
-import { createiMessageAdapter } from "../../node_modules/eve/dist/src/compiled/@photon-ai/chat-adapter-imessage/index.js";
 import {
   TAPBACK_CONTEXT,
   tapbackDecision,
