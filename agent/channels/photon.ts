@@ -1,4 +1,4 @@
-import { photonIMessageChannel } from "eve/channels/photon";
+import { defaultPhotonAuth, photonIMessageChannel } from "eve/channels/photon";
 
 export default photonIMessageChannel({
   async credentials() {
@@ -13,7 +13,7 @@ export default photonIMessageChannel({
   onMessage(_ctx, message) {
     if (message.author.isBot) return null;
     return {
-      auth: null,
+      auth: defaultPhotonAuth(message),
       context: [`The sender is ${message.author.fullName}.`],
     };
   },
