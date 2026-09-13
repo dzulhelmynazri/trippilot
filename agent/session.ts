@@ -11,7 +11,7 @@ const TOOLKITS = [
   "googlecalendar",
 ] as const;
 
-const WRITE_TOOL_SLUGS = [
+export const WRITE_TOOL_SLUGS = [
   "NOTION_CREATE_NOTION_PAGE",
   "NOTION_ADD_MULTIPLE_PAGE_CONTENT",
   "GOOGLECALENDAR_CREATE_EVENT",
@@ -102,8 +102,17 @@ export async function executeSessionTool(
   slug: string,
   args: Record<string, unknown>,
 ): Promise<SessionToolResult> {
+  const session = await sessionFor(userId);
+  return executeBySessionId(session.sessionId, slug, args);
+}
+
+export async function executeBySessionId(
+  sessionId: string,
+  slug: string,
+  args: Record<string, unknown>,
+): Promise<SessionToolResult> {
   try {
-    const session = await sessionFor(userId);
+    const session = await composio.sessions.use(sessionId);
     const result = await session.execute(
       slug,
       Object.fromEntries(
@@ -121,6 +130,23 @@ export async function executeSessionTool(
       error: error instanceof Error ? error.message : String(error),
     };
   }
+}
+
+export function isWriteToolSlug(slug: string): boolean {
+  return WRITE_TOOL_SLUGS.includes(
+    slug.toUpperCase() as (typeof WRITE_TOOL_SLUGS)[number],
+  );
+}
+
+export function multiExecuteNeedsApproval(input: unknown): boolean {
+  if (typeof input !== "object" || input === null) return false;
+  const requested = (input as { tools?: unknown }).tools;
+  if (!Array.isArray(requested)) return false;
+  return requested.some((item) => {
+    if (typeof item !== "object" || item === null) return false;
+    const slug = (item as { tool_slug?: unknown }).tool_slug;
+    return typeof slug === "string" && isWriteToolSlug(slug);
+  });
 }
 
 function composioConnectUrl(value?: string | null): string | undefined {
