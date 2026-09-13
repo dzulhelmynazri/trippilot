@@ -6,6 +6,10 @@ Talk to TripPilot like a friend — it searches real flights and hotels, saves y
 
 Built with [eve](https://eve.dev), run locally in the terminal UI, with live fares from [Ignav](https://ignav.com/mcp) and [Composio](https://composio.dev) for hotels, maps, Notion, and Calendar.
 
+**[Watch the demo](https://youtu.be/8yOPQebV5PU)**
+
+[![TripPilot demo](https://img.youtube.com/vi/8yOPQebV5PU/maxresdefault.jpg)](https://youtu.be/8yOPQebV5PU)
+
 ---
 
 ## What it does
@@ -101,6 +105,8 @@ agent/
 ---
 
 ## Demo script
+
+[Watch the recorded demo](https://youtu.be/8yOPQebV5PU)
 
 Two minutes in the eve terminal. Talk like a traveler — never name tools.
 
