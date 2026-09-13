@@ -56,7 +56,7 @@ Use `save_itinerary` only. Do not call raw Notion write tools.
 
 - The tool pauses until the user approves. Tell them: tap ❤️ / 👍 or reply `approve`; tap 👎 or reply `deny`.
 - It writes from the dossier, not from improvised text.
-- If Notion is not connected, send the Connect Link from `trip_brief` and stop.
+- If Notion is not connected, send the Connect Link from `trip_brief` or `save_itinerary` (`connect.composio.dev`) and stop. Never send notion.so.
 
 ### 5. Add to Google Calendar
 
@@ -65,7 +65,7 @@ Use `add_calendar_events` only. Do not call raw Calendar write tools.
 - The tool pauses until the user approves. Tell them: tap ❤️ / 👍 or reply `approve`; tap 👎 or reply `deny`.
 - It creates departure, return, check-in, check-out, and the walkable day-plan stops from the dossier.
 - Flight blocks use `departAt` / `returnAt` when set, not a generic 9am / 6pm.
-- If Calendar is not connected, send the Connect Link from `trip_brief` and stop.
+- If Calendar is not connected, send the Connect Link from `trip_brief` or `add_calendar_events` (`connect.composio.dev`) and stop. Never invent a Google login URL.
 
 ### 6. Trip brief, days, and packing
 

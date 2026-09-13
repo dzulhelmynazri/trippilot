@@ -3,7 +3,12 @@ import { defineTool } from "eve/tools";
 import { always } from "eve/tools/approval";
 import { z } from "zod";
 import { dayCalendarEvents } from "../lib/calendar";
-import { executeUserTool, extractUrl, requirePrincipalId } from "../lib/composio";
+import {
+  executeUserTool,
+  extractUrl,
+  requirePrincipalId,
+  writeConnection,
+} from "../lib/composio";
 import { eventDateTime, trip, withTripExtras } from "../lib/trip";
 
 const extraEventSchema = z.object({
@@ -43,6 +48,18 @@ export default defineTool({
       return {
         ok: false as const,
         error: "No destination on the trip dossier. Call update_trip first.",
+      };
+    }
+
+    const calendar = await writeConnection(userId, "googlecalendar");
+    if (!calendar.connected) {
+      return {
+        ok: false as const,
+        needsConnection: true,
+        connectUrl: calendar.connectUrl,
+        error: calendar.connectUrl
+          ? `Google Calendar is not connected. Send this Connect Link verbatim and stop. ${calendar.connectUrl}`
+          : "Google Calendar is not connected and Composio did not return a Connect Link. Call trip_brief.",
       };
     }
 

@@ -7,6 +7,7 @@ import {
   extractUrl,
   firstNotionParentId,
   requirePrincipalId,
+  writeConnection,
 } from "../lib/composio";
 import { itineraryMarkdown, trip } from "../lib/trip";
 
@@ -14,7 +15,7 @@ export default defineTool({
   description: dedent`
     Create a Notion page from the durable trip dossier after the user approves.
     Do not call raw Notion write tools.
-    If Notion is not connected, return the Connect Link to the user and stop.
+    If Notion is not connected, return the Composio Connect Link and stop. Never send notion.so.
     When this tool parks, tell the user: tap ❤️ / 👍 or reply approve to save; tap 👎 or reply deny to cancel.
   `,
   inputSchema: z.object({
@@ -45,6 +46,18 @@ export default defineTool({
       return {
         ok: false as const,
         error: "No destination on the trip dossier. Call update_trip first.",
+      };
+    }
+
+    const notion = await writeConnection(userId, "notion");
+    if (!notion.connected) {
+      return {
+        ok: false as const,
+        needsConnection: true,
+        connectUrl: notion.connectUrl,
+        error: notion.connectUrl
+          ? `Notion is not connected. Send this Connect Link verbatim and stop. Do not send notion.so. ${notion.connectUrl}`
+          : "Notion is not connected and Composio did not return a Connect Link. Call trip_brief.",
       };
     }
 

@@ -244,7 +244,7 @@ export function nextActions(
     actions.push(
       notion.connectUrl
         ? `Connect Notion: ${notion.connectUrl}`
-        : "Connect Notion in chat, then approve save_itinerary",
+        : "Notion is not connected — call trip_brief again for a Composio Connect Link",
     );
   } else if (!dossier.notionPageUrl) {
     actions.push(
@@ -255,7 +255,7 @@ export function nextActions(
     actions.push(
       calendar.connectUrl
         ? `Connect Calendar: ${calendar.connectUrl}`
-        : "Connect Google Calendar in chat, then approve add_calendar_events",
+        : "Calendar is not connected — call trip_brief again for a Composio Connect Link",
     );
   } else if (dossier.calendarEventCount === 0) {
     actions.push(

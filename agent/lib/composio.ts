@@ -87,16 +87,31 @@ export type WriteConnection = {
   connectUrl?: string;
 };
 
+const COMPOSIO_CONNECT_HOST = /(^|\.)composio\.dev$/i;
+
+/** Accept only Composio Connect Links — never notion.so or a reconstructed OAuth page. */
+export function composioConnectUrl(value?: string | null): string | undefined {
+  if (!value) return undefined;
+  try {
+    const url = new URL(value);
+    if (url.protocol !== "https:") return undefined;
+    if (!COMPOSIO_CONNECT_HOST.test(url.hostname)) return undefined;
+    return url.toString();
+  } catch {
+    return undefined;
+  }
+}
+
 export async function writeConnections(
   userId: string,
 ): Promise<WriteConnection[]> {
   return Promise.all([
-    connectionFor(userId, "notion"),
-    connectionFor(userId, "googlecalendar"),
+    writeConnection(userId, "notion"),
+    writeConnection(userId, "googlecalendar"),
   ]);
 }
 
-async function connectionFor(
+export async function writeConnection(
   userId: string,
   toolkit: WriteConnection["toolkit"],
 ): Promise<WriteConnection> {
@@ -109,11 +124,12 @@ async function connectionFor(
     if ((listed.items?.length ?? 0) > 0) {
       return { toolkit, connected: true };
     }
-    const request = await composio.toolkits.authorize(userId, toolkit);
+    const session = await createUserSession(userId);
+    const request = await session.authorize(toolkit);
     return {
       toolkit,
       connected: false,
-      connectUrl: request.redirectUrl ?? undefined,
+      connectUrl: composioConnectUrl(request.redirectUrl),
     };
   } catch {
     return { toolkit, connected: false };
