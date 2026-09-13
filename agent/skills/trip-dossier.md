@@ -8,7 +8,7 @@ Read `get_trip` before recommending options or warning about money. Spend and ov
 
 If `overBudget` is true, call `budget_fork` and send its `imessage` text. Do not invent cheaper fares or hotel prices.
 
-For a summary, packing list, day plan, weather, map links, or Connect Links, call `trip_brief` and send its `imessage` text. Packing, remaining cash, landmarks, weather, Maps URLs, and connection links come from that tool.
+For a summary, packing list, day plan, weather, map links, Book links, or Connect Links, call `trip_brief` and send its `imessage` text. Packing, remaining cash, landmarks, weather, Maps URLs, Ignav/Blue Pillow Book URLs, and connection links come from that tool. Flight book links are the Ignav MCP `booking_url` on each fare. Hotel book links are Blue Pillow `deeplink_url` or `CREATE_BOOKING_HANDOFF`.
 
 `add_calendar_events` writes those day-plan stops onto Calendar after the user approves.
 

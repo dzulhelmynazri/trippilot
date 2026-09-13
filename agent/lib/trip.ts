@@ -2,6 +2,7 @@ import dedent from "dedent";
 import { defineState } from "eve/context";
 import { isStayTransition, walkableStops } from "./calendar";
 import type { WriteConnection } from "./composio";
+import { flightBookUrl, hotelBookUrl } from "./booking";
 import { playbookStops } from "./destinations";
 import { mapsSearchUrl } from "./maps";
 import type { TripWeather } from "./weather";
@@ -261,6 +262,10 @@ export function nextActions(
       "Approve add_calendar_events — tap ❤️ / 👍 or reply approve (👎 / deny to cancel)",
     );
   }
+  const flightBook = flightBookUrl(dossier);
+  const hotelBook = hotelBookUrl(dossier);
+  if (flightBook) actions.push(`Book flight: ${flightBook}`);
+  if (hotelBook) actions.push(`Book hotel: ${hotelBook}`);
   if (dossier.hotel) {
     actions.push(`Open Maps for ${dossier.hotel.name}`);
   }
@@ -319,8 +324,8 @@ export function itineraryMarkdown(dossier: TripDossier): string {
     ${ready.weather ? `- Weather: ${ready.weather.summary} (${ready.weather.source})` : ""}
 
     ## Important Links
-    ${ready.flight?.bookingUrl ? `- Flight: ${ready.flight.bookingUrl}` : ""}
-    ${ready.hotel?.bookingUrl ? `- Hotel: ${ready.hotel.bookingUrl}` : ""}
+    ${flightBookUrl(ready) ? `- Flight: ${flightBookUrl(ready)}` : ""}
+    ${hotelBookUrl(ready) ? `- Hotel: ${hotelBookUrl(ready)}` : ""}
 
     ## Packing
     ${ready.packing.map((item) => `- ${item}`).join("\n")}
@@ -355,9 +360,15 @@ export function tripBriefText(
     ready.flight
       ? `✈️ ${ready.flight.name}${clockLabel(ready.flight.departAt) ? ` · ${clockLabel(ready.flight.departAt)}` : ""}`
       : "✈️ Flight not picked",
+    ready.flight && flightBookUrl(ready)
+      ? `   Book — ${flightBookUrl(ready)}`
+      : undefined,
     ready.hotel
       ? `🏨 ${ready.hotel.name} — ${mapsSearchUrl(ready.hotel.name)}`
       : "🏨 Hotel not picked",
+    ready.hotel && hotelBookUrl(ready)
+      ? `   Book — ${hotelBookUrl(ready)}`
+      : undefined,
     "",
     "📅 DAYS",
     ...ready.days.flatMap((day) => [

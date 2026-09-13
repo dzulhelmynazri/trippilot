@@ -33,24 +33,22 @@ Collect anything missing, then persist it with `update_trip`:
 - **Preferences** (airline, hotel rating, activities, dietary needs)
 - **Number of travelers**
 
-### 2. Search Flights (Ignav)
+### 2. Search Flights (Ignav MCP)
 
-Use the Ignav flights tools to:
+Use the Ignav connection (`search_airports`, then `search_flights`).
 
-- Search for flights matching the user's origin, destination, and dates.
-- Present the top 3–5 options with airline, times, stops, and price.
-- Include the booking link (airline or OTA) for the user's chosen flight.
-- When the user picks one, `update_trip` with that flight name, price, booking URL, and `departAt` / `returnAt` clock times.
+- Resolve cities to IATA codes, then search one-way or round-trip fares.
+- Every itinerary includes a `booking_url`. Show that URL. Never invent or rebuild a booking page.
+- When the user picks a fare, `update_trip` with the flight name, price, `departAt` / `returnAt`, and `bookingUrl` set to that itinerary's `booking_url`.
 
 ### 3. Find Hotels (Blue Pillow)
 
 Use the Blue Pillow tools to:
 
-- Resolve the destination to find available hotels.
-- Recommend 3–5 hotels that match the budget and preferences.
-- Compare available offers and highlight the best value.
-- Provide a tracked booking handoff link for the user's chosen hotel.
-- When the user picks one, `update_trip` with that hotel name, total price, and booking URL.
+- Resolve the destination, then search or recommend stays.
+- Present 3–5 hotels with live prices. Offer links are `deeplink_url` or `web_url` — pass them verbatim.
+- When the user picks one, call `BLUEPILLOW_CREATE_BOOKING_HANDOFF` with that `property_id` and stay dates if you do not already have a `deeplink_url`.
+- `update_trip` with the hotel name, total price, and `bookingUrl` set to the Blue Pillow `deep_link` / `deeplink_url` / `web_url`. Never reconstruct an OTA URL.
 
 ### 4. Save Itinerary to Notion
 
@@ -71,9 +69,9 @@ Use `add_calendar_events` only. Do not call raw Calendar write tools.
 
 ### 6. Trip brief, days, and packing
 
-Use `trip_brief` only. It fills walkable day stops (with Maps links), destination weather, a packing list, remaining budget, and Connect Links when Notion or Calendar are not connected.
+Use `trip_brief` only. It fills walkable day stops (with Maps links), Book links, destination weather, a packing list, remaining budget, and Connect Links when Notion or Calendar are not connected.
 
-- Send the `imessage` field to the user. It already includes tappable Maps URLs.
+- Send the `imessage` field to the user. It already includes tappable Maps and Book URLs.
 - If they name specific stops, persist them with `update_trip` `days`, then call `trip_brief` again.
 - Do not invent landmarks, weather, or Connect Links.
 
@@ -93,12 +91,12 @@ When presenting a complete trip summary, structure it like this:
 ✈️ FLIGHTS
 • Outbound: [Airline] [Flight#] — [Time] — [Price]
 • Return: [Airline] [Flight#] — [Time] — [Price]
-• Book here: [link]
+• Book: [URL from trip_brief — do not invent]
 
 🏨 HOTEL
 • [Hotel Name] ⭐ [Rating] — [Price/night]
 • [Key amenities]
-• Book here: [link]
+• Book: [URL from trip_brief — do not invent]
 
 🎒 PACKING
 • From trip_brief — do not invent items
@@ -120,4 +118,4 @@ When presenting a complete trip summary, structure it like this:
 - **Budget awareness:** Trust `get_trip`. If `overBudget` is true, call `budget_fork` and send both recut plans. Never invent a cheaper fare or hotel price.
 - **If a tool call fails**, explain what happened clearly and suggest alternatives.
 - **Privacy:** Never share one user's travel details with another. Each conversation is private.
-- **Booking links only:** You do not complete purchases — you hand off to the airline/hotel booking page.
+- **Booking links only:** You do not complete purchases. Flight Book URLs come from Ignav `search_flights` `booking_url`. Hotel Book URLs come from Blue Pillow `deeplink_url` / `CREATE_BOOKING_HANDOFF`. Send the Book lines from `trip_brief` after those URLs are on the dossier. Never invent a booking page.

@@ -4,14 +4,14 @@
 
 Text TripPilot like a friend — it searches real flights and hotels, saves your itinerary to Notion, blocks your calendar, and sends Google Maps links. No app to download. No web UI. Just Messages.
 
-Built with [eve](https://eve.dev), deployed on [Vercel](https://vercel.com), delivered over [Photon](https://photon.codes) iMessage, and powered by [Composio](https://composio.dev) for multi-app orchestration.
+Built with [eve](https://eve.dev), deployed on [Vercel](https://vercel.com), delivered over [Photon](https://photon.codes) iMessage, with live fares from [Ignav](https://ignav.com/mcp) and [Composio](https://composio.dev) for hotels, maps, Notion, and Calendar.
 
 ---
 
 ## What it does
 
 1. **Gather trip details** — destination, dates, budget, preferences
-2. **Search flights** — via Ignav (Composio)
+2. **Search flights** — via Ignav MCP (`booking_url` on every fare)
 3. **Find hotels** — via Blue Pillow (Composio)
 4. **Save itinerary** — structured page in the user's Notion workspace
 5. **Add calendar events** — flights, check-in, check-out, and walkable day-plan stops
@@ -43,9 +43,9 @@ flowchart LR
 
   User -->|text| Photon
   Photon -->|webhook| Eve
+  Eve --> Ignav
   Eve --> Composio
   Eve --> Upstash
-  Composio --> Ignav
   Composio --> Hotels
   Composio --> Notion
   Composio --> Calendar
@@ -65,7 +65,7 @@ flowchart LR
 | Agent framework | [eve](https://eve.dev) v0.53 |
 | Messaging | [Photon](https://photon.codes) iMessage channel |
 | Deploy | Vercel |
-| Integrations | Composio (Ignav, Blue Pillow, Notion, Google Calendar, Google Maps) |
+| Integrations | Ignav MCP (flights); Composio (Blue Pillow, Notion, Google Calendar, Google Maps) |
 | Memory | Upstash Redis documents via `@upstash/agentkit-eve` |
 | Model | `claude-haiku-4-5-20251001` (Anthropic) |
 
@@ -84,6 +84,9 @@ agent/
     destinations.ts    # Code-backed day-plan playbooks
     maps.ts / calendar.ts
     composio.ts        # Per-user session factory + write execute
+    booking.ts         # Pass-through Ignav / Blue Pillow book URLs
+  connections/
+    ignav.ts           # Ignav MCP: search_airports + search_flights
   channels/
     photon.ts          # iMessage inbound/outbound + per-user auth
     eve.ts             # HTTP session API (OIDC + localDev)
@@ -239,7 +242,10 @@ IMESSAGE_ENDPOINT=https://<your-vercel-app>.vercel.app/eve/v1/photon
 # Anthropic (direct, not AI Gateway)
 ANTHROPIC_API_KEY=
 
-# Composio Platform
+# Ignav MCP (flights)
+IGNAV_API_KEY=
+
+# Composio Platform (hotels, maps, Notion, Calendar)
 COMPOSIO_API_KEY=
 
 # Upstash Redis (memory)
@@ -261,6 +267,11 @@ Set the same variables in **Vercel → Project → Environment Variables** (Prod
 3. Set the webhook URL to `https://<your-app>.vercel.app/eve/v1/photon`
 4. Copy the webhook signing secret into `IMESSAGE_WEBHOOK_SECRET`
 
+### Ignav setup
+
+1. Create an API key at [ignav.com](https://ignav.com)
+2. Set `IGNAV_API_KEY` locally and in Vercel. Flight search uses the hosted MCP at `https://ignav.com/mcp`.
+
 ### Composio setup
 
 1. Get a Platform API key from [dashboard.composio.dev](https://dashboard.composio.dev/)
@@ -270,7 +281,7 @@ Set the same variables in **Vercel → Project → Environment Variables** (Prod
 
 ## Deploy
 
-`npm run deploy` loads `.env` locally so the build can resolve Composio, Upstash, and Anthropic credentials. Git-connected Vercel builds skip a missing `.env` and use **Vercel → Environment Variables** instead.
+`npm run deploy` loads `.env` locally so the build can resolve Ignav, Composio, Upstash, and Anthropic credentials. Git-connected Vercel builds skip a missing `.env` and use **Vercel → Environment Variables** instead.
 
 ```bash
 npm run deploy
@@ -284,5 +295,6 @@ Production URL: `https://trippilot-dzulhelmy.vercel.app`
 
 - [eve documentation](https://eve.dev/docs)
 - [Photon iMessage channel](https://eve.dev/docs/channels/photon)
+- [Ignav MCP](https://ignav.com/mcp)
 - [Composio + eve provider](https://docs.composio.dev/docs/providers/eve)
 - [Build an Agent tutorial](https://eve.dev/docs/tutorial/first-agent)

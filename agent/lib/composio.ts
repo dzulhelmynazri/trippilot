@@ -4,11 +4,7 @@ import {
   requireApprovalForTools,
 } from "@composio/experimental/eve";
 
-export const SEARCH_TOOLKITS = [
-  "ignav_flights",
-  "bluepillow",
-  "google_maps",
-] as const;
+export const SEARCH_TOOLKITS = ["bluepillow", "google_maps"] as const;
 
 export const WRITE_TOOLKITS = ["notion", "googlecalendar"] as const;
 
