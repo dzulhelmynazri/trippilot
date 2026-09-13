@@ -17,6 +17,8 @@ Built with [eve](https://eve.dev), deployed on [Vercel](https://vercel.com), del
 5. **Add calendar events** — flights, check-in, check-out, and walkable day-plan stops
 6. **Share map links** — tappable Google Maps URLs on the trip brief
 7. **Trip brief** — remaining budget, weather, real day stops, Maps links, packing, and Connect Links when apps are not connected
+8. **Over-budget fork** — when spend exceeds budget, two code-backed recut plans (keep hotel vs keep flight)
+9. **Tapback HITL** — parked Notion/Calendar writes: tap ❤️ / 👍 or reply approve; 👎 or deny to cancel
 
 Each iMessage user connects their own Notion and Google Calendar accounts. TripPilot never mixes data between users.
 
@@ -77,6 +79,8 @@ agent/
   agent.ts             # Model config
   lib/
     trip.ts            # Durable typed trip dossier (defineState)
+    fork.ts            # Over-budget recut plans (keep hotel vs keep flight)
+    tapback.ts         # ❤️ / 👍 approve · 👎 deny
     destinations.ts    # Code-backed day-plan playbooks
     maps.ts / calendar.ts
     composio.ts        # Per-user session factory + write execute
@@ -87,6 +91,7 @@ agent/
     composio.ts        # Search/connect tools, no process-wide cache
     update_trip.ts / get_trip.ts
     trip_brief.ts       # Code-backed days, packing, next actions
+    budget_fork.ts     # Two recut plans when over budget
     save_itinerary.ts  # Notion write, approval: always()
     add_calendar_events.ts
     google_maps_link.ts
@@ -106,6 +111,12 @@ Find flights from Kuala Lumpur and a hotel near Shibuya.
 Send me the trip brief with packing and the day plan.
 ```
 
+Over-budget recut (optional):
+
+```
+My budget is $400 and I picked a $1800 flight. Show me both recut plans.
+```
+
 Then:
 
 ```
@@ -117,6 +128,8 @@ After OAuth:
 ```
 Save the itinerary to Notion and add everything to my calendar.
 ```
+
+When the write parks: tap 👎 on the iMessage to cancel, or tap ❤️ / 👍 to save. Reply `deny` / `approve` also works.
 
 ---
 
@@ -144,7 +157,7 @@ npx eve channels list   # → eve, photon
 
 ## Reliability & evaluation
 
-Evals run against a local dev server via the same HTTP surface as production. Smoke covers boot + maps. Reliability covers the trip dossier and approval-gated writes. Usefulness covers the code-backed trip brief.
+Evals run against a local dev server via the same HTTP surface as production. Smoke covers boot + maps. Reliability covers the trip dossier and approval-gated writes. Usefulness covers the code-backed trip brief. Originality covers the over-budget fork and tapback deny mapping.
 
 | Eval | Checks |
 |------|--------|
@@ -157,11 +170,14 @@ Evals run against a local dev server via the same HTTP surface as production. Sm
 | `reliability/save-approve` | Approve the parked save → tool leaves `pending` and executes |
 | `reliability/calendar-approval` | `add_calendar_events` parks on HITL approval (`pending`) |
 | `usefulness/trip-brief` | Tokyo + $800/$600 picks → brief with $600 left, stops, Maps, weather, flight time |
+| `originality/budget-fork` | $400 budget + $1800 flight → `budget_fork` + keep-hotel / keep-flight recuts |
+| `originality/tapback-deny` | 👎 maps to deny → parked `save_itinerary` is `rejected`, never `completed` |
 
 ```bash
 npm run eval:smoke
 npm run eval:reliability
 npm run eval:usefulness
+npm run eval:originality
 # or all evals:
 npm run eval
 ```
@@ -193,19 +209,28 @@ Runs use `maxConcurrency: 1` to stay under AI Gateway free-tier rate limits.
 ✓ usefulness/trip-brief  9/9  ($600 left, Tokyo stops, Maps, 22:15, weather/umbrella)
 ```
 
+**Latest originality run:** 1/2 passed · `google/gemini-2.5-flash`
+
+```
+✓ originality/budget-fork  8/8  (keep hotel / keep flight, $400 targets)
+```
+
+`originality/tapback-deny` is authored (👎 → deny → `save_itinerary` rejected). First run settled the write (7 HITL gates) then hit AI Gateway free-tier 429 on the follow-up model call.
+
 Committed proof for judges:
 
 - [`evals/results/smoke-summary.json`](evals/results/smoke-summary.json)
 - [`evals/results/reliability-summary.json`](evals/results/reliability-summary.json)
 - [`evals/results/usefulness-summary.json`](evals/results/usefulness-summary.json)
+- [`evals/results/originality-summary.json`](evals/results/originality-summary.json)
 
 Full local artifacts live under `.eve/evals/` (gitignored as build output).
 
 **Judges can verify by either:**
 
 1. Reading the committed summaries in `evals/results/`
-2. Cloning and running `npm run eval:smoke` / `npm run eval:reliability` / `npm run eval:usefulness` (requires `.env`)
-3. Inspecting `evals/smoke/*.eval.ts` and `evals/reliability/*.eval.ts`
+2. Cloning and running `npm run eval:smoke` / `npm run eval:reliability` / `npm run eval:usefulness` / `npm run eval:originality` (requires `.env`)
+3. Inspecting `evals/smoke/*.eval.ts`, `evals/reliability/*.eval.ts`, and `evals/originality/*.eval.ts`
 
 Memory uses Upstash Redis document storage (`fileMemory` + `redisDocuments`) — durable per-user notes without RediSearch, compatible with Upstash free tier.
 

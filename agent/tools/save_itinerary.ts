@@ -15,6 +15,7 @@ export default defineTool({
     Create a Notion page from the durable trip dossier after the user approves.
     Do not call raw Notion write tools.
     If Notion is not connected, return the Connect Link to the user and stop.
+    When this tool parks, tell the user: tap ❤️ / 👍 or reply approve to save; tap 👎 or reply deny to cancel.
   `,
   inputSchema: z.object({
     parentId: z

@@ -24,6 +24,7 @@ export default defineTool({
     Create Google Calendar events from the durable trip dossier after the user approves.
     Writes departure, return, hotel check-in, walkable day-plan stops from the dossier, and any extra events.
     Do not call raw Calendar write tools.
+    When this tool parks, tell the user: tap ❤️ / 👍 or reply approve; tap 👎 or reply deny to cancel.
   `,
   inputSchema: z.object({
     timezone: z.string().default("UTC"),

@@ -233,7 +233,9 @@ export function nextActions(
   if (!dossier.flight) actions.push("Pick a flight and save it on the dossier");
   if (!dossier.hotel) actions.push("Pick a hotel and save it on the dossier");
   if (dossier.overBudget) {
-    actions.push("Choose a cheaper flight or hotel — the plan is over budget");
+    actions.push(
+      "Over budget — pick recut A (keep hotel) or B (keep flight)",
+    );
   }
   const notion = connections.find((item) => item.toolkit === "notion");
   const calendar = connections.find((item) => item.toolkit === "googlecalendar");
@@ -244,7 +246,9 @@ export function nextActions(
         : "Connect Notion in chat, then approve save_itinerary",
     );
   } else if (!dossier.notionPageUrl) {
-    actions.push("Approve save_itinerary to write the plan to Notion");
+    actions.push(
+      "Approve save_itinerary — tap ❤️ / 👍 or reply approve (👎 / deny to cancel)",
+    );
   }
   if (calendar && !calendar.connected) {
     actions.push(
@@ -253,7 +257,9 @@ export function nextActions(
         : "Connect Google Calendar in chat, then approve add_calendar_events",
     );
   } else if (dossier.calendarEventCount === 0) {
-    actions.push("Approve add_calendar_events to block the trip on Calendar");
+    actions.push(
+      "Approve add_calendar_events — tap ❤️ / 👍 or reply approve (👎 / deny to cancel)",
+    );
   }
   if (dossier.hotel) {
     actions.push(`Open Maps for ${dossier.hotel.name}`);

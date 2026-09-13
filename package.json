@@ -14,6 +14,7 @@
     "eval:smoke": "node --env-file=.env ./node_modules/.bin/eve eval smoke",
     "eval:reliability": "node --env-file=.env ./node_modules/.bin/eve eval reliability",
     "eval:usefulness": "node --env-file=.env ./node_modules/.bin/eve eval usefulness",
+    "eval:originality": "node --env-file=.env ./node_modules/.bin/eve eval originality",
     "start": "eve start",
     "typecheck": "tsc"
   },

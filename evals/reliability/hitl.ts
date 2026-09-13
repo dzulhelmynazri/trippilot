@@ -1,5 +1,9 @@
+import { tapbackDecision } from "../../agent/lib/tapback";
+
 export const SAVE_ITINERARY_PROMPT =
   "Persist this trip now: destination Tokyo, origin Kuala Lumpur, depart 2026-04-10, return 2026-04-13, budget 2000. Then immediately save the itinerary to Notion with save_itinerary.";
+
+export { tapbackDecision };
 
 export function approvalOptionId(
   request: {
