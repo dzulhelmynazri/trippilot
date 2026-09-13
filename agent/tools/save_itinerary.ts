@@ -15,7 +15,7 @@ export default defineTool({
     Create a Notion page from the durable trip dossier after the user approves.
     Do not call raw Notion write tools.
     If Notion is not connected, return the Composio Connect Link and stop. Never send notion.so.
-    When this tool parks, tell the user: tap ❤️ / 👍 or reply approve to save; tap 👎 or reply deny to cancel.
+    When this tool parks, tell the user: reply approve to save; reply deny to cancel.
     After this tool returns ok or skipped, do not call it again. A user reply of only approve or deny settles the parked call — do not start a new save.
   `,
   inputSchema: z.object({

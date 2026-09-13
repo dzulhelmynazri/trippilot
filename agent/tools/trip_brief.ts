@@ -61,7 +61,7 @@ export default defineTool({
       },
       connections,
       nextActions: nextActions(ready, connections),
-      imessage: tripBriefText(ready, connections),
+      text: tripBriefText(ready, connections),
     };
   },
 });

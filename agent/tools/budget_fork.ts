@@ -10,7 +10,7 @@ export default defineTool({
     Plan A keeps the hotel and caps the flight at budget minus hotel;
     Plan B keeps the flight and caps the hotel at budget minus flight (or flags that the flight alone is still over).
     Call this as soon as get_trip.overBudget is true, or when the user asks for cheaper options / a recut.
-    Do not invent alternate prices — send the imessage field as-is.
+    Do not invent alternate prices — send the text field as-is.
   `,
   inputSchema: z.object({}),
   label: {
@@ -38,7 +38,7 @@ export default defineTool({
         spentUsd: ready.spentUsd,
         remainingUsd: remainingUsd(ready),
         plans: [],
-        imessage: budgetForkText(ready, []),
+        text: budgetForkText(ready, []),
         error: "On budget. No recut needed.",
       };
     }
@@ -51,7 +51,7 @@ export default defineTool({
       spentUsd: ready.spentUsd,
       remainingUsd: remainingUsd(ready),
       plans,
-      imessage: budgetForkText(ready, plans),
+      text: budgetForkText(ready, plans),
     };
   },
 });

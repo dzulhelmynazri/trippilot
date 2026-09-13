@@ -20,15 +20,11 @@
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^4.0.53",
-    "@chat-adapter/state-memory": "^4.34.0",
     "@composio/core": "^0.18.1",
     "@composio/experimental": "^0.2.4",
-    "@photon-ai/chat-adapter-imessage": "^3.2.0",
     "@upstash/agentkit-eve": "^0.9.0",
     "@upstash/redis": "^1.38.4",
-    "@vercel/connect": "^2.0.4",
     "ai": "^7.0.93",
-    "chat": "^4.34.0",
     "dedent": "^1.7.2",
     "eve": "^0.53.1",
     "zod": "4.5.4"

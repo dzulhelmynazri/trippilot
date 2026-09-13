@@ -1,10 +1,10 @@
 # TripPilot ✈️
 
-**A travel-planning agent that lives in iMessage.**
+**A travel-planning agent you run in the terminal.**
 
-Text TripPilot like a friend — it searches real flights and hotels, saves your itinerary to Notion, blocks your calendar, and sends Google Maps links. No app to download. No web UI. Just Messages.
+Talk to TripPilot like a friend — it searches real flights and hotels, saves your itinerary to Notion, blocks your calendar, and sends Google Maps links.
 
-Built with [eve](https://eve.dev), deployed on [Vercel](https://vercel.com), delivered over [Photon](https://photon.codes) iMessage, with live fares from [Ignav](https://ignav.com/mcp) and [Composio](https://composio.dev) for hotels, maps, Notion, and Calendar.
+Built with [eve](https://eve.dev), run locally in the terminal UI, with live fares from [Ignav](https://ignav.com/mcp) and [Composio](https://composio.dev) for hotels, maps, Notion, and Calendar.
 
 ---
 
@@ -18,9 +18,9 @@ Built with [eve](https://eve.dev), deployed on [Vercel](https://vercel.com), del
 6. **Share map links** — tappable Google Maps URLs on the trip brief
 7. **Trip brief** — remaining budget, weather, real day stops, Maps links, packing, and Connect Links when apps are not connected
 8. **Over-budget fork** — when spend exceeds budget, two code-backed recut plans (keep hotel vs keep flight)
-9. **Tapback HITL** — parked Notion/Calendar writes: tap ❤️ / 👍 or reply approve; 👎 or deny to cancel
+9. **HITL approval** — parked Notion/Calendar writes: reply `approve` or `deny`
 
-Each iMessage user connects their own Notion and Google Calendar accounts. TripPilot never mixes data between users.
+Each user connects their own Notion and Google Calendar accounts. TripPilot never mixes data between users.
 
 Trip facts live in a typed session dossier (`update_trip` / `get_trip`). Spend vs budget is computed in code. Notion and Calendar writes go through approval-gated tools — the run parks until the user confirms.
 
@@ -30,9 +30,8 @@ Trip facts live in a typed session dossier (`update_trip` / `get_trip`). Spend v
 
 ```mermaid
 flowchart LR
-  User["📱 iMessage user"]
-  Photon["Photon.codes"]
-  Eve["eve agent\n(Vercel)"]
+  User["Terminal user"]
+  Eve["eve agent\n(TUI)"]
   Composio["Composio\nTool Router"]
   Upstash["Upstash Redis\n(memory)"]
   Ignav["Ignav\n(flights)"]
@@ -41,8 +40,7 @@ flowchart LR
   Calendar["Google Calendar"]
   Maps["Google Maps"]
 
-  User -->|text| Photon
-  Photon -->|webhook| Eve
+  User -->|text| Eve
   Eve --> Ignav
   Eve --> Composio
   Eve --> Upstash
@@ -50,11 +48,10 @@ flowchart LR
   Composio --> Notion
   Composio --> Calendar
   Composio --> Maps
-  Eve -->|reply| Photon
-  Photon -->|iMessage| User
+  Eve -->|reply| User
 ```
 
-**Webhook route:** `POST /eve/v1/photon`
+**Local surface:** `npm run dev` — eve terminal UI
 
 ---
 
@@ -63,7 +60,7 @@ flowchart LR
 | Layer | Technology |
 |-------|------------|
 | Agent framework | [eve](https://eve.dev) v0.53 |
-| Messaging | [Photon](https://photon.codes) iMessage channel |
+| Surface | eve terminal (`npm run dev`) |
 | Deploy | Vercel |
 | Integrations | Ignav MCP (flights); Composio (Blue Pillow, Notion, Google Calendar, Google Maps) |
 | Memory | Upstash Redis documents via `@upstash/agentkit-eve` |
@@ -80,7 +77,7 @@ agent/
   lib/
     trip.ts            # Durable typed trip dossier (defineState)
     fork.ts            # Over-budget recut plans (keep hotel vs keep flight)
-    tapback.ts         # ❤️ / 👍 approve · 👎 deny
+    tapback.ts         # approve / deny HITL replies
     destinations.ts    # Code-backed day-plan playbooks
     maps.ts / calendar.ts
     composio.ts        # Per-user session factory + write execute
@@ -88,8 +85,7 @@ agent/
   connections/
     ignav.ts           # Ignav MCP: search_airports + search_flights
   channels/
-    photon.ts          # iMessage inbound/outbound + per-user auth
-    eve.ts             # HTTP session API (OIDC + localDev)
+    eve.ts             # HTTP session API + terminal UI (OIDC + localDev)
   tools/
     composio.ts        # Search/connect tools, no process-wide cache
     update_trip.ts / get_trip.ts
@@ -106,14 +102,14 @@ agent/
 
 ## Demo script
 
-Two minutes in iMessage. Talk like a traveler — never name tools.
+Two minutes in the eve terminal. Talk like a traveler — never name tools.
 
-**0:00** — “A travel agent in Messages. It asks before it saves anything.”
+**0:00** — “A travel agent in the terminal. It asks before it saves anything.”
 
 **0:08** — send:
 
 ```
-Tokyo 10–13 April from KL, budget $2000. I picked JL71 for $800 leaving 22:15 and Park Hyatt for $600. Send me the brief — packing, weather, days, and maps.
+Tokyo 10–12 April from KL, budget $2000. I picked JL71 for $800 leaving 22:15 and Park Hyatt for $600. Send me the brief — packing, weather, days, and maps.
 ```
 
 Point at remaining cash, 22:15, a Tokyo stop, and a Maps link.
@@ -132,11 +128,11 @@ Point at the two cheaper plans (keep the hotel vs keep the flight).
 Save this to Notion.
 ```
 
-When it asks: tap 👎 to cancel, or ❤️ / 👍 to save.
+When it asks: reply `deny` to cancel, or `approve` to save.
 
 **1:55** — “That write never goes through unless I approve.”
 
-Skip live flight search and Notion login on camera. If a tap doesn’t register, reply `deny` or `approve`.
+Skip live flight search and Notion login on camera.
 
 ---
 
@@ -157,7 +153,7 @@ npm run build
 npm run deploy       # deploy to Vercel (loads .env automatically)
 npm run typecheck
 npm run eval:smoke   # run smoke evals (loads .env automatically)
-npx eve channels list   # → eve, photon
+npx eve channels list   # → eve
 ```
 
 ---
@@ -233,12 +229,6 @@ Writes to Notion and Google Calendar are **approval-gated** (`save_itinerary`, `
 Create a `.env` file in the project root:
 
 ```bash
-# Photon iMessage
-IMESSAGE_PROJECT_ID=
-IMESSAGE_PROJECT_SECRET=
-IMESSAGE_WEBHOOK_SECRET=
-IMESSAGE_ENDPOINT=https://<your-vercel-app>.vercel.app/eve/v1/photon
-
 # Anthropic (direct, not AI Gateway)
 ANTHROPIC_API_KEY=
 
@@ -254,18 +244,6 @@ UPSTASH_REDIS_REST_TOKEN=
 ```
 
 Set the same variables in **Vercel → Project → Environment Variables** (Production) before deploying.
-
-### Photon setup
-
-1. Create a project at [app.photon.codes](https://app.photon.codes/)
-2. Register your phone as a Spectrum user:
-   ```bash
-   npx @photon-ai/cli login
-   export PHOTON_PROJECT_ID=<your-project-id>
-   npx @photon-ai/cli spectrum users add --phone +<E.164> --first-name You --invite
-   ```
-3. Set the webhook URL to `https://<your-app>.vercel.app/eve/v1/photon`
-4. Copy the webhook signing secret into `IMESSAGE_WEBHOOK_SECRET`
 
 ### Ignav setup
 
@@ -294,7 +272,7 @@ Production URL: `https://trippilot-dzulhelmy.vercel.app`
 ## Learn more
 
 - [eve documentation](https://eve.dev/docs)
-- [Photon iMessage channel](https://eve.dev/docs/channels/photon)
+- [eve HTTP / terminal channel](https://eve.dev/docs/channels/eve)
 - [Ignav MCP](https://ignav.com/mcp)
 - [Composio + eve provider](https://docs.composio.dev/docs/providers/eve)
 - [Build an Agent tutorial](https://eve.dev/docs/tutorial/first-agent)

@@ -253,7 +253,7 @@ export function nextActions(
     );
   } else if (!itinerarySaved(dossier)) {
     actions.push(
-      "Approve save_itinerary — tap ❤️ / 👍 or reply approve (👎 / deny to cancel)",
+      "Approve save_itinerary — reply approve (deny to cancel)",
     );
   }
   if (calendar && !calendar.connected) {
@@ -264,7 +264,7 @@ export function nextActions(
     );
   } else if (dossier.calendarEventCount === 0) {
     actions.push(
-      "Approve add_calendar_events — tap ❤️ / 👍 or reply approve (👎 / deny to cancel)",
+      "Approve add_calendar_events — reply approve (deny to cancel)",
     );
   }
   const flightBook = flightBookUrl(dossier);
