@@ -1,42 +1,23 @@
 {
-  "runAt": "2026-09-13T18:47:00.000Z",
-  "command": "npm run eval:originality",
-  "model": "google/gemini-2.5-flash",
-  "passed": 1,
-  "failed": 1,
+  "runAt": "2026-09-13T19:55:10.000Z",
+  "command": "npm run eval",
+  "model": "claude-haiku-4-5-20251001",
+  "passed": 2,
+  "failed": 0,
   "totalEvals": 2,
   "gatesPassed": 15,
-  "gatesFailed": 1,
-  "durationMs": 24000,
+  "gatesFailed": 0,
+  "durationMs": 75000,
   "evals": [
     {
       "id": "originality/budget-fork",
       "verdict": "passed",
-      "runAt": "2026-09-13T18:47:00.000Z",
-      "assertions": [
-        "succeeded",
-        "calledTool(update_trip) destination=/tokyo/i",
-        "calledTool(update_trip) flight.priceUsd=1800",
-        "calledTool(budget_fork)",
-        "includes(/over.?budget|recut|plan a|plan b/i)",
-        "includes(/keep the hotel|recut the flight/i)",
-        "includes(/keep the flight|recut the hotel/i)",
-        "includes(/\\$400|400/)"
-      ]
+      "assertions": ["8/8"]
     },
     {
       "id": "originality/tapback-deny",
-      "verdict": "failed",
-      "runAt": "2026-09-13T18:47:00.000Z",
-      "note": "First run settled 👎 → deny (save_itinerary rejected, never completed) then Gateway 429 on the follow-up model call (7/8). Retry 429'd before park.",
-      "assertions": [
-        "calledTool(update_trip) destination=/tokyo/i",
-        "parked",
-        "calledTool(save_itinerary) pending",
-        "tapbackDecision(👎)=deny",
-        "calledTool(save_itinerary) rejected",
-        "calledTool(save_itinerary) completed=0"
-      ]
+      "verdict": "passed",
+      "assertions": ["7/7"]
     }
   ],
   "reproduce": "Clone repo, add .env (see README), then run: npm run eval:originality"

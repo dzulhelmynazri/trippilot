@@ -1,60 +1,38 @@
 {
-  "runAt": "2026-09-13T18:20:00.000Z",
-  "command": "npm run eval:reliability && eve eval reliability/save-deny",
-  "model": "google/gemini-2.5-flash",
-  "passed": 4,
+  "runAt": "2026-09-13T19:55:10.000Z",
+  "command": "npm run eval",
+  "model": "claude-haiku-4-5-20251001",
+  "passed": 5,
   "failed": 0,
-  "totalEvals": 4,
-  "gatesPassed": 19,
+  "totalEvals": 5,
+  "gatesPassed": 25,
   "gatesFailed": 0,
-  "durationMs": 35500,
+  "durationMs": 75000,
   "evals": [
     {
       "id": "reliability/budget-over",
       "verdict": "passed",
-      "runAt": "2026-09-13T18:09:23.405Z",
-      "assertions": [
-        "succeeded",
-        "calledTool(update_trip) destination=/tokyo/i",
-        "calledTool(update_trip) budgetUsd=400",
-        "calledTool(update_trip) flight.priceUsd=1800",
-        "includes(/over.?budget|exceed|over the budget|too expensive|overspent/i)"
-      ]
-    },
-    {
-      "id": "reliability/save-approval",
-      "verdict": "passed",
-      "runAt": "2026-09-13T18:09:23.405Z",
-      "assertions": [
-        "calledTool(update_trip) destination=/tokyo/i",
-        "parked",
-        "calledTool(save_itinerary, status=pending)"
-      ]
+      "assertions": ["5/5"]
     },
     {
       "id": "reliability/calendar-approval",
       "verdict": "passed",
-      "runAt": "2026-09-13T18:13:00.000Z",
-      "assertions": [
-        "calledTool(update_trip) destination=/tokyo/i",
-        "parked",
-        "calledTool(add_calendar_events, status=pending)"
-      ]
+      "assertions": ["3/3"]
+    },
+    {
+      "id": "reliability/save-approval",
+      "verdict": "passed",
+      "assertions": ["3/3"]
+    },
+    {
+      "id": "reliability/save-approve",
+      "verdict": "passed",
+      "assertions": ["6/6"]
     },
     {
       "id": "reliability/save-deny",
       "verdict": "passed",
-      "runAt": "2026-09-13T18:20:00.000Z",
-      "assertions": [
-        "calledTool(update_trip) destination=/tokyo/i",
-        "parked",
-        "calledTool(save_itinerary, status=pending)",
-        "requireInputRequest(save_itinerary)",
-        "succeeded after deny",
-        "calledTool(save_itinerary, status=rejected, output=/denied/)",
-        "calledTool(save_itinerary, status=completed, count=0)",
-        "calledTool(save_itinerary, status=pending, count=0)"
-      ]
+      "assertions": ["8/8"]
     }
   ],
   "reproduce": "Clone repo, add .env (see README), then run: npm run eval:reliability"

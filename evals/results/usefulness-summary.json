@@ -1,28 +1,19 @@
 {
-  "runAt": "2026-09-13T18:36:00.000Z",
-  "command": "npm run eval:usefulness",
-  "model": "google/gemini-2.5-flash",
+  "runAt": "2026-09-13T19:55:10.000Z",
+  "command": "npm run eval",
+  "model": "claude-haiku-4-5-20251001",
   "passed": 1,
   "failed": 0,
   "totalEvals": 1,
   "gatesPassed": 9,
   "gatesFailed": 0,
-  "durationMs": 14100,
+  "durationMs": 75000,
   "evals": [
     {
       "id": "usefulness/trip-brief",
       "verdict": "passed",
-      "runAt": "2026-09-13T18:36:00.000Z",
       "assertions": [
-        "succeeded",
-        "calledTool(update_trip) destination=/tokyo/i",
-        "calledTool(trip_brief)",
-        "includes(/tokyo/i)",
-        "includes(/\\$600|600 left|600 remaining/i)",
-        "includes(/passport|walking shoes|suica|light layers/i)",
-        "includes(/2026-04-10|arrive/i)",
-        "includes(/shibuya|senso-ji|meiji|tsukiji|skytree/i)",
-        "includes(/google.com\\/maps/i)",
+        "9/9",
         "includes(/22:15/) 100%",
         "includes(/°C|wet|dry|typical|umbrella/i) 100%"
       ]

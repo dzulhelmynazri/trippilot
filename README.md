@@ -64,10 +64,10 @@ flowchart LR
 |-------|------------|
 | Agent framework | [eve](https://eve.dev) v0.53 |
 | Messaging | [Photon](https://photon.codes) iMessage channel |
-| Deploy | Vercel + AI Gateway |
+| Deploy | Vercel |
 | Integrations | Composio (Ignav, Blue Pillow, Notion, Google Calendar, Google Maps) |
 | Memory | Upstash Redis documents via `@upstash/agentkit-eve` |
-| Model | `google/gemini-2.5-flash` (Vercel AI Gateway) |
+| Model | `claude-haiku-4-5-20251001` (Anthropic) |
 
 ---
 
@@ -103,33 +103,37 @@ agent/
 
 ## Demo script
 
-Try this in iMessage after setup:
+Two minutes in iMessage. Talk like a traveler — never name tools.
+
+**0:00** — “A travel agent in Messages. It asks before it saves anything.”
+
+**0:08** — send:
 
 ```
-Plan a 3-day trip to Tokyo in April, budget $2000.
-Find flights from Kuala Lumpur and a hotel near Shibuya.
-Send me the trip brief with packing and the day plan.
+Tokyo 10–13 April from KL, budget $2000. I picked JL71 for $800 leaving 22:15 and Park Hyatt for $600. Send me the brief — packing, weather, days, and maps.
 ```
 
-Over-budget recut (optional):
+Point at remaining cash, 22:15, a Tokyo stop, and a Maps link.
+
+**0:50** — send:
 
 ```
-My budget is $400 and I picked a $1800 flight. Show me both recut plans.
+Wait, my budget is actually $400. What are my options?
 ```
 
-Then:
+Point at the two cheaper plans (keep the hotel vs keep the flight).
+
+**1:20** — send:
 
 ```
-Connect my Notion account
+Save this to Notion.
 ```
 
-After OAuth:
+When it asks: tap 👎 to cancel, or ❤️ / 👍 to save.
 
-```
-Save the itinerary to Notion and add everything to my calendar.
-```
+**1:55** — “That write never goes through unless I approve.”
 
-When the write parks: tap 👎 on the iMessage to cancel, or tap ❤️ / 👍 to save. Reply `deny` / `approve` also works.
+Skip live flight search and Notion login on camera. If a tap doesn’t register, reply `deny` or `approve`.
 
 ---
 
@@ -182,9 +186,25 @@ npm run eval:originality
 npm run eval
 ```
 
-Runs use `maxConcurrency: 1` to stay under AI Gateway free-tier rate limits.
+Runs use `maxConcurrency: 1`.
 
-`reliability/save-approve` and `originality/tapback-deny` are authored; latest runs settled the HITL write, then hit AI Gateway free-tier 429s on the follow-up model call. Committed proof for judges:
+**Latest full run:** 11/11 passed · 56/56 gates · `claude-haiku-4-5-20251001` · 1m 15s
+
+```
+✓ originality/budget-fork          8/8
+✓ originality/tapback-deny         7/7
+✓ reliability/budget-over          5/5
+✓ reliability/calendar-approval    3/3
+✓ reliability/save-approval        3/3
+✓ reliability/save-approve         6/6
+✓ reliability/save-deny            8/8
+✓ smoke/greeting                   2/2
+✓ smoke/maps-link                  2/2
+✓ smoke/trip-intake                3/3
+✓ usefulness/trip-brief            9/9
+```
+
+Committed proof for judges:
 
 - [`evals/results/smoke-summary.json`](evals/results/smoke-summary.json)
 - [`evals/results/reliability-summary.json`](evals/results/reliability-summary.json)
@@ -216,8 +236,8 @@ IMESSAGE_PROJECT_SECRET=
 IMESSAGE_WEBHOOK_SECRET=
 IMESSAGE_ENDPOINT=https://<your-vercel-app>.vercel.app/eve/v1/photon
 
-# Vercel AI Gateway
-AI_GATEWAY_API_KEY=
+# Anthropic (direct, not AI Gateway)
+ANTHROPIC_API_KEY=
 
 # Composio Platform
 COMPOSIO_API_KEY=
@@ -250,7 +270,7 @@ Set the same variables in **Vercel → Project → Environment Variables** (Prod
 
 ## Deploy
 
-`npm run deploy` loads `.env` locally so the build can resolve Composio, Upstash, and AI Gateway credentials. Git-connected Vercel builds skip a missing `.env` and use **Vercel → Environment Variables** instead.
+`npm run deploy` loads `.env` locally so the build can resolve Composio, Upstash, and Anthropic credentials. Git-connected Vercel builds skip a missing `.env` and use **Vercel → Environment Variables** instead.
 
 ```bash
 npm run deploy

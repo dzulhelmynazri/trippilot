@@ -19,6 +19,7 @@
     "typecheck": "tsc"
   },
   "dependencies": {
+    "@ai-sdk/anthropic": "^4.0.53",
     "@chat-adapter/state-memory": "^4.34.0",
     "@composio/core": "^0.18.1",
     "@composio/experimental": "^0.2.4",
