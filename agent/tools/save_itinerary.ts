@@ -3,12 +3,12 @@ import { defineTool } from "eve/tools";
 import { always } from "eve/tools/approval";
 import { z } from "zod";
 import {
-  executeUserTool,
+  executeSessionTool,
   extractUrl,
   firstNotionParentId,
   requirePrincipalId,
   writeConnection,
-} from "../lib/composio";
+} from "../session";
 import { itineraryMarkdown, trip } from "../lib/trip";
 
 export default defineTool({
@@ -90,7 +90,7 @@ export default defineTool({
       };
     }
 
-    const created = await executeUserTool(userId, "NOTION_CREATE_NOTION_PAGE", {
+    const created = await executeSessionTool(userId, "NOTION_CREATE_NOTION_PAGE", {
       title,
       icon: "✈️",
       parent_id: resolvedParentId,
@@ -128,7 +128,7 @@ async function findParentPage(
   parentTitle?: string,
 ): Promise<string | undefined> {
   const query = parentTitle ?? "TripPilot";
-  const searched = await executeUserTool(userId, "NOTION_SEARCH_NOTION_PAGE", {
+  const searched = await executeSessionTool(userId, "NOTION_SEARCH_NOTION_PAGE", {
     query,
     page_size: 5,
     filter_value: "page",
@@ -136,7 +136,7 @@ async function findParentPage(
   const fromQuery = firstNotionParentId(searched.data ?? searched);
   if (fromQuery) return fromQuery;
 
-  const fallback = await executeUserTool(userId, "NOTION_SEARCH_NOTION_PAGE", {
+  const fallback = await executeSessionTool(userId, "NOTION_SEARCH_NOTION_PAGE", {
     query: "",
     page_size: 5,
     filter_value: "page",

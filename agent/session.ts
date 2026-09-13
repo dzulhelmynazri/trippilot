@@ -4,23 +4,31 @@ import {
   requireApprovalForTools,
 } from "@composio/experimental/eve";
 
-export const SEARCH_TOOLKITS = ["bluepillow", "google_maps"] as const;
+const TOOLKITS = [
+  "bluepillow",
+  "google_maps",
+  "notion",
+  "googlecalendar",
+] as const;
 
-export const WRITE_TOOLKITS = ["notion", "googlecalendar"] as const;
-
-export const TOOLKITS = [...SEARCH_TOOLKITS, ...WRITE_TOOLKITS] as const;
-
-/** Side-effect slugs the model must not fire without a human approval. */
-export const WRITE_TOOL_SLUGS = [
+const WRITE_TOOL_SLUGS = [
   "NOTION_CREATE_NOTION_PAGE",
   "NOTION_ADD_MULTIPLE_PAGE_CONTENT",
   "GOOGLECALENDAR_CREATE_EVENT",
   "GOOGLECALENDAR_DELETE_EVENT",
 ] as const;
 
+const COMPOSIO_CONNECT_HOST = /(^|\.)composio\.dev$/i;
+
 export const composio = new Composio({
   provider: new EveProvider({
     needsApproval: requireApprovalForTools(...WRITE_TOOL_SLUGS),
+    hooks: {
+      search: (ctx, next) => {
+        ctx.request.args.toolkits = [...TOOLKITS];
+        return next();
+      },
+    },
   }),
 });
 
@@ -39,46 +47,11 @@ export function requirePrincipalId(auth: SessionAuth): string {
   return id;
 }
 
-export function createUserSession(userId: string) {
+export function sessionFor(userId: string) {
   return composio.sessions.create(userId, {
     toolkits: [...TOOLKITS],
     sandbox: { enable: false },
   });
-}
-
-type ToolExecuteResult = {
-  successful?: boolean;
-  error?: unknown;
-  data?: unknown;
-};
-
-export async function executeUserTool(
-  userId: string,
-  slug: string,
-  args: Record<string, unknown>,
-): Promise<ToolExecuteResult> {
-  const tools = composio.tools as {
-    execute: (
-      toolSlug: string,
-      body: {
-        userId: string;
-        arguments: Record<string, unknown>;
-        dangerouslySkipVersionCheck?: boolean;
-      },
-    ) => Promise<ToolExecuteResult>;
-  };
-  try {
-    return await tools.execute(slug, {
-      userId,
-      arguments: compact(args),
-      dangerouslySkipVersionCheck: true,
-    });
-  } catch (error) {
-    return {
-      successful: false,
-      error: error instanceof Error ? error.message : String(error),
-    };
-  }
 }
 
 export type WriteConnection = {
@@ -86,21 +59,6 @@ export type WriteConnection = {
   connected: boolean;
   connectUrl?: string;
 };
-
-const COMPOSIO_CONNECT_HOST = /(^|\.)composio\.dev$/i;
-
-/** Accept only Composio Connect Links — never notion.so or a reconstructed OAuth page. */
-export function composioConnectUrl(value?: string | null): string | undefined {
-  if (!value) return undefined;
-  try {
-    const url = new URL(value);
-    if (url.protocol !== "https:") return undefined;
-    if (!COMPOSIO_CONNECT_HOST.test(url.hostname)) return undefined;
-    return url.toString();
-  } catch {
-    return undefined;
-  }
-}
 
 export async function writeConnections(
   userId: string,
@@ -116,15 +74,12 @@ export async function writeConnection(
   toolkit: WriteConnection["toolkit"],
 ): Promise<WriteConnection> {
   try {
-    const listed = await composio.connectedAccounts.list({
-      userIds: [userId],
-      toolkitSlugs: [toolkit],
-      statuses: ["ACTIVE"],
-    });
-    if ((listed.items?.length ?? 0) > 0) {
+    const session = await sessionFor(userId);
+    const listed = await session.toolkits({ toolkits: [toolkit] });
+    const item = listed.items.find((entry) => entry.slug === toolkit);
+    if (item?.connection?.isActive) {
       return { toolkit, connected: true };
     }
-    const session = await createUserSession(userId);
     const request = await session.authorize(toolkit);
     return {
       toolkit,
@@ -136,17 +91,55 @@ export async function writeConnection(
   }
 }
 
-export function compact<T extends Record<string, unknown>>(
-  value: T,
-): Record<string, unknown> {
-  return Object.fromEntries(
-    Object.entries(value).filter(([, item]) => item !== undefined),
-  );
+export type SessionToolResult = {
+  successful: boolean;
+  error?: unknown;
+  data?: unknown;
+};
+
+export async function executeSessionTool(
+  userId: string,
+  slug: string,
+  args: Record<string, unknown>,
+): Promise<SessionToolResult> {
+  try {
+    const session = await sessionFor(userId);
+    const result = await session.execute(
+      slug,
+      Object.fromEntries(
+        Object.entries(args).filter(([, value]) => value !== undefined),
+      ),
+    );
+    return {
+      successful: result.error == null,
+      error: result.error ?? undefined,
+      data: result.data,
+    };
+  } catch (error) {
+    return {
+      successful: false,
+      error: error instanceof Error ? error.message : String(error),
+    };
+  }
 }
 
-export function extractUrl(payload: unknown, pattern: RegExp): string | undefined {
-  const text = JSON.stringify(payload);
-  return text.match(pattern)?.[0];
+function composioConnectUrl(value?: string | null): string | undefined {
+  if (!value) return undefined;
+  try {
+    const url = new URL(value);
+    if (url.protocol !== "https:") return undefined;
+    if (!COMPOSIO_CONNECT_HOST.test(url.hostname)) return undefined;
+    return url.toString();
+  } catch {
+    return undefined;
+  }
+}
+
+export function extractUrl(
+  payload: unknown,
+  pattern: RegExp,
+): string | undefined {
+  return JSON.stringify(payload).match(pattern)?.[0];
 }
 
 export function firstNotionParentId(payload: unknown): string | undefined {

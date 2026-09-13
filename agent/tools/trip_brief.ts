@@ -6,7 +6,7 @@ import {
   requirePrincipalId,
   writeConnections,
   type WriteConnection,
-} from "../lib/composio";
+} from "../session";
 import {
   briefMapLinks,
   nextActions,

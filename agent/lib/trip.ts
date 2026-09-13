@@ -1,7 +1,7 @@
 import dedent from "dedent";
 import { defineState } from "eve/context";
 import { isStayTransition, walkableStops } from "./calendar";
-import type { WriteConnection } from "./composio";
+import type { WriteConnection } from "../session";
 import { flightBookUrl, hotelBookUrl } from "./booking";
 import { playbookStops } from "./destinations";
 import { mapsSearchUrl } from "./maps";

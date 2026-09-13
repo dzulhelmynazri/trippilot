@@ -4,11 +4,11 @@ import { always } from "eve/tools/approval";
 import { z } from "zod";
 import { dayCalendarEvents } from "../lib/calendar";
 import {
-  executeUserTool,
+  executeSessionTool,
   extractUrl,
   requirePrincipalId,
   writeConnection,
-} from "../lib/composio";
+} from "../session";
 import { eventDateTime, trip, withTripExtras } from "../lib/trip";
 
 const extraEventSchema = z.object({
@@ -91,7 +91,7 @@ export default defineTool({
 
     const results = [];
     for (const event of planned) {
-      const created = await executeUserTool(
+      const created = await executeSessionTool(
         userId,
         "GOOGLECALENDAR_CREATE_EVENT",
         event,
