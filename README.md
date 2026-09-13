@@ -210,7 +210,7 @@ Set the same variables in **Vercel → Project → Environment Variables** (Prod
 
 ## Deploy
 
-`npm run deploy` loads `.env` locally so the build can resolve Composio, Upstash, and AI Gateway credentials. Production secrets must also be set in **Vercel → Environment Variables**.
+`npm run deploy` loads `.env` locally so the build can resolve Composio, Upstash, and AI Gateway credentials. Git-connected Vercel builds skip a missing `.env` and use **Vercel → Environment Variables** instead.
 
 ```bash
 npm run deploy

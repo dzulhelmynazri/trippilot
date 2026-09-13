@@ -7,7 +7,7 @@
     "#evals/*": "./evals/*"
   },
   "scripts": {
-    "build": "node --env-file=.env ./node_modules/.bin/eve build",
+    "build": "node --env-file-if-exists=.env ./node_modules/.bin/eve build",
     "deploy": "node --env-file=.env ./node_modules/.bin/eve deploy",
     "dev": "node --env-file=.env ./node_modules/.bin/eve dev",
     "eval": "node --env-file=.env ./node_modules/.bin/eve eval",
