@@ -1,17 +1,18 @@
 {
-  "runAt": "2026-09-13T18:09:23.405Z",
+  "runAt": "2026-09-13T18:13:00.000Z",
   "command": "npm run eval:reliability",
   "model": "google/gemini-2.5-flash",
-  "passed": 2,
+  "passed": 3,
   "failed": 0,
-  "totalEvals": 2,
-  "gatesPassed": 8,
+  "totalEvals": 3,
+  "gatesPassed": 11,
   "gatesFailed": 0,
-  "durationMs": 11118,
+  "durationMs": 17118,
   "evals": [
     {
       "id": "reliability/budget-over",
       "verdict": "passed",
+      "runAt": "2026-09-13T18:09:23.405Z",
       "assertions": [
         "succeeded",
         "calledTool(update_trip) destination=/tokyo/i",
@@ -23,10 +24,21 @@
     {
       "id": "reliability/save-approval",
       "verdict": "passed",
+      "runAt": "2026-09-13T18:09:23.405Z",
       "assertions": [
         "calledTool(update_trip) destination=/tokyo/i",
         "parked",
         "calledTool(save_itinerary, status=pending)"
+      ]
+    },
+    {
+      "id": "reliability/calendar-approval",
+      "verdict": "passed",
+      "runAt": "2026-09-13T18:13:00.000Z",
+      "assertions": [
+        "calledTool(update_trip) destination=/tokyo/i",
+        "parked",
+        "calledTool(add_calendar_events, status=pending)"
       ]
     }
   ],

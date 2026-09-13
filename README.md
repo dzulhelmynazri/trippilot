@@ -148,6 +148,7 @@ Evals run against a local dev server via the same HTTP surface as production. Sm
 | `smoke/maps-link` | Location request returns a Google Maps URL |
 | `reliability/budget-over` | $400 budget + $1800 flight → dossier + over-budget warning |
 | `reliability/save-approval` | `save_itinerary` parks on HITL approval (`pending`) |
+| `reliability/calendar-approval` | `add_calendar_events` parks on HITL approval (`pending`) |
 
 ```bash
 npm run eval:smoke
@@ -158,11 +159,12 @@ npm run eval
 
 Runs use `maxConcurrency: 1` to stay under AI Gateway free-tier rate limits.
 
-**Latest reliability run:** 2/2 passed · 8/8 gates · ~11s · `google/gemini-2.5-flash`
+**Latest reliability run:** 3/3 passed · 11/11 gates · `google/gemini-2.5-flash`
 
 ```
-✓ reliability/budget-over   5/5 gates  (update_trip Tokyo + $400 + $1800 flight, warned over budget)
-✓ reliability/save-approval 3/3 gates  (update_trip then save_itinerary parked pending)
+✓ reliability/budget-over        5/5  (dossier + over-budget warning)
+✓ reliability/save-approval      3/3  (save_itinerary parked pending)
+✓ reliability/calendar-approval  3/3  (add_calendar_events parked pending)
 ```
 
 Committed proof for judges:
